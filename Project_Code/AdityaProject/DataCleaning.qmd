@@ -5,9 +5,40 @@ library(readr)
 
 getwd()
 
-data <- read.csv("Project_Code/Data/data_traffic.csv")
+traffic <- read.csv("Project_Code/Data/data_traffic.csv")
 
 
-head(data)
+head(traffic)
 
 ```
+
+
+```{r}
+## Visualizing some basic data
+
+library(ggplot2)
+
+
+#By month
+ggplot(data = traffic, aes(x=month)) + geom_bar()
+
+
+#By year
+ggplot(data = traffic, aes(x=accident_year)) + geom_bar()
+
+
+#By gender
+pie(table(traffic$party_sex))
+
+
+#Injury types
+pie(table(traffic$collision_severity))
+
+
+#Time of day
+
+pie(table(traffic$time_cat))
+
+
+```
+
