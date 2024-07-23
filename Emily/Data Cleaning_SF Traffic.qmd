@@ -1,0 +1,50 @@
+---
+title: "Data Cleaning_SF Traffic"
+format: html
+editor: visual
+---
+
+# Part 1: Data Cleaning-SF Traffic
+
+## Preparation
+
+### Import All Necessary Packages
+
+```{r}
+library(janitor)
+library(titanic)
+library(tidyr) 
+library(tidyverse) 
+library(dplyr) 
+library(ggplot2) 
+library(readr)
+```
+
+### Reading in Data
+
+```{r}
+#Define url of data
+url <- "https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Emily-branch/Project_Code/Data/data_traffic.csv"
+# Load the dataset into a dataframe called traffic_data
+traffic_data <- read_csv(url)
+```
+
+### Overview of Dataset
+
+```{r}
+# Preview the first few rows
+head(traffic_data)
+#Overview of dataframe
+str(traffic_data)
+#Summary of stats based on column
+summary(traffic_data)
+#Number of rows [31995]
+nrow(traffic_data)
+#Number of columns [86]
+ncol(traffic_data) 
+#Names of columns
+names(traffic_data)
+
+dupes <- get_dupes(traffic_data)
+
+```
