@@ -1,0 +1,18 @@
+Reading the data
+
+```{r}
+traffic_data <- read.csv("data_traffic.csv")
+nrow(traffic_data)
+```
+
+Remove NA values and
+
+```{r}
+install.packages("janitor")
+library(janitor)
+#remove NA values
+clean_data <- na.omit(traffic_data)
+#check for dupes
+get_dupes(clean_data)
+
+```
