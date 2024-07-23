@@ -1,0 +1,13 @@
+```{r}
+
+#install.packages("readr")
+library(readr)
+
+getwd()
+
+data <- read.csv("Project_Code/Data/data_traffic.csv")
+
+
+head(data)
+
+```
