@@ -1,3 +1,6 @@
+Install and load packages
+
+```{r}
 install.packages(c("sf", "tidyr", "dplyr", "lubridate", "ggplot2"))
 library("sf")
 library("tidyr")
@@ -5,31 +8,39 @@ library("dplyr")
 library("lubridate")
 library("ggplot2")
 library("scales")
+```
 
+Get the dataset
 
-## Get the dataset
+```{r}
 prefix <- "Project_Code/Data/"
 data <- read.csv(paste0(prefix, list.files(prefix)))
 head(data)
 
-
-## Graph the number of collisions every hour in the day
-## Observation: Most collisions occur around 8 am and 6 pm (rush hours)
 get_hrs <- function(date) {
   return (as.numeric(format(date, format = "%H")))
 }
 ts <- strptime(data$collision_time, format = "%H:%M:%S")
 data$hrs <- get_hrs(round_date(ts, unit = "hour"))
-sam_col <- data |> slice_sample(n = 1e4)
+```
 
+Visualization
+
+```{r}
+## Graph the number of collisions every hour in the day
+## Observation: Most collisions occur around 8 am and 6 pm (rush hours)
+sam_col <- data |> slice_sample(n = 1e4)
 ggplot(sam_col, aes(x = hrs)) +
   geom_bar() +
   labs(title = "Time Frequencies of Car Collisions",
        x = "Hour in the Day",
        y = "Frequency") +
   scale_x_continuous(breaks = seq(0, 23, 2))
+```
 
+Graph
 
+```{r}
 ## Graph party ages vs. casualty
 ## Observation: Slightly negative correlations
 ## Not enough data? Outliers?
@@ -44,7 +55,11 @@ ggplot(sam_age, aes(x = party_age, y = hurt)) +
   geom_point() +
   scale_y_continuous(breaks = breaks_pretty())
 
+```
 
+Graph 2
+
+```{r}
 ## Graph lighting vs. casualty
 ## Observation: Dark - No Street Light = max casualty
 sam_lgh <- data |>
@@ -55,8 +70,11 @@ sam_lgh <- data |>
 
 ggplot(sam_lgh, aes(lighting, hurt)) +
   geom_col()
+```
 
+Graph
 
+```{r}
 ## Graph locations on a map
 ## Observation: Weird road conditions are clustered
 sam_map <- data |>
@@ -66,8 +84,11 @@ sam_map <- data |>
 map <- st_as_sf(sam_map, coords = c("tb_longitude", "tb_latitude"))
 map <- st_set_crs(map, 4326)
 ggplot(map) + geom_sf(aes(color = road_cond_1))
+```
 
+Graph
 
+```{r}
 ## Graph hour in the day vs. causality
 sam_hrs <- data |>
   drop_na(number_injured, number_killed) |>
@@ -77,14 +98,10 @@ sam_hrs <- data |>
 
 ggplot(sam_hrs, aes(x = hrs, y = hurt)) +
   geom_point()
+```
 
+Investigate research questions
 
-## RQ1: Estimate collision_severity with vehicle_autonomous, lighting, and stwd_vehicle_type
-## Challenge: What ML model to use? How to graph?
-
-## RQ2: Predict causality given party age and lighting
-
-## RQ3: Predict road condition given location (longitude + latitude)
-
-ggplot(data, aes(x = road_cond_1)) +
-  geom_bar()
+``` r
+## Train a KNN model to classify road conditions based on locations here!
+```
