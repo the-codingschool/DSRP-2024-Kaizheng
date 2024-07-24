@@ -44,7 +44,27 @@ nrow(traffic_data)
 ncol(traffic_data) 
 #Names of columns
 names(traffic_data)
+```
 
+#### Findings: 
+
+-   Number of rows is 31995
+
+-   Number of columns is 86
+
+## Cleaning
+
+```{r}
+#Finding duplicate records (none found in all columns)
 dupes <- get_dupes(traffic_data)
 
+#Removing fully NA rows or cols in dataset (there are none found here)
+clean_traffic_data <- remove_empty(traffic_data)
+ncol(clean_traffic_data)
+nrow(clean_traffic_data)
+
+is.special <- function(x){
+if (is.numeric(x)) !is.finite(x) else is.na(x)
+}
+sapply(clean_traffic_data, is.special)
 ```
