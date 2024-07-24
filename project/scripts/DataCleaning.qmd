@@ -5,14 +5,37 @@ traffic_data <- read.csv("data_traffic.csv")
 nrow(traffic_data)
 ```
 
-Remove NA values and
+Remove NA values and subset data
 
 ```{r}
 install.packages("janitor")
 library(janitor)
-#remove NA values
-clean_data <- na.omit(traffic_data)
-#check for dupes
-get_dupes(clean_data)
+library(dplyr)
+library(ggplot2)
+#remove NA values and subset data
+cleaned_data <- traffic_data |>
+  select("party_age", "at_fault") |>
+  na.omit()
+#plot data
+cleaned_data |>
+  filter(at_fault == "Yes") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) +
+  labs(title = "Distribution of Ages for At-Fault Parties",
+       x = "Age of Party",
+       y = "Count") +
+  xlim(0,100) +
+  ylim(0, 1600)
+cleaned_data |>
+  filter(at_fault == "No") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for Non-Fault Parties",
+       x = "Age of Party",
+       y = "Count") + 
+  xlim(0,100) +
+  ylim(0,1600)
+```
+
+Find factors that could cause these higher crash rates from mid aged people.
+
+```{r}
 
 ```
