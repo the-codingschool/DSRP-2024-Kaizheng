@@ -38,4 +38,23 @@ Find factors that could cause these higher crash rates from mid aged people.
 
 ```{r}
 
+sobriety_data <- traffic_data |>
+  filter(party_age  > 0) |>
+  select("party_age", "party_sobriety") |>
+  na.omit()
+table(sobriety_data$party_sobriety)
+sobriety_data |>
+  filter(party_sobriety == "Had Been Drinking, Under Influence") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for Under the Influence Drinking crashes",
+       x = "Sobriety",
+       y = "Count") + 
+  xlim(0,100) + 
+  ylim(0, 70)
+sobriety_data |>
+  filter(party_sobriety == "Had Not Been Drinking") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for No Drinking crashes",
+       x = "Sobriety",
+       y = "Count")
 ```
+
+Fit a model to predict a party's sobrety
