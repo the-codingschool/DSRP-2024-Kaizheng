@@ -1,0 +1,70 @@
+---
+title: "Exploratory Data Analysis_SF Traffic"
+format: html
+editor: visual
+---
+
+# Part 2: Exploratory Data Analysis-SF Traffic
+
+## Preparation
+
+### Import All Necessary Packages
+
+```{r}
+library(janitor)
+library(titanic)
+library(tidyr) 
+library(tidyverse) 
+library(dplyr) 
+library(ggplot2) 
+library(readr)
+```
+
+### Reading in Data
+
+```{r}
+#Define url of data
+url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'
+
+# Load the dataset into a dataframe called traffic_d8ata
+clean_traffic_data <- read_csv(url)
+print(clean_traffic_data)
+```
+
+## Basic Exploration
+
+### Unique values in columns of interest
+
+**collision_severity (5)**: Injury (Complaint of Pain), Injury (Other Visible), Fatal, Injury (Severe), Medical
+
+**move_pre_acc (20+NA) \[movement before collision\]**: Proceeding Straight, Entering Traffic, Slowing/Stopping, Stopped, Traveling Wrong Way, Making Right Turn, Making Left Turn, Parked, NA, Changing Lanes, Making U Turn, Passing Other Vehicle, Backing, Other, Parking Maneuver, Ran Off Road, Other Unsafe Turning, Crossed Into Opposing Lane, Merging, Crossing Into Opposing Lane
+
+**type_of_collision (8+NA)**: Sideswipe, NA, Other, Vehicle/Pedestrian, Broadside, Rear End, Head-On, Hit Object, Overturned
+
+**mviw \[motor vehicle involved with\] (10+NA)**: Parked Motor Vehicle, NA, Non-Collision, Pedestrian, Other Motor Vehicle, Bicycle, Fixed Object, Other Object, Motor Vehicle on Other Roadway, Train, Animal
+
+**ped_action (7+NA)**: Pedestrian Involved; Crossing Not in Crosswalk; Crossing in Crosswalk at Intersection; In Road, Including Shoulder; Crossing in Crosswalk Not at Intersection; NA; Not in Road; Approaching/Leaving School Bus
+
+**vz_pcf_code (204+NA)** **\[California vehicle code primary collision factor violated\]**
+
+**vz_pcf_description (159+NA) \[Description of vehicle code violated\]**
+
+**oaf_viol_section (456+NA)** **\[Other associated factor section\]**
+
+**number_killed (4)**: 0, 1, 2, 4
+
+**number_injured (10)**: 1, 5, 0, 3, 2, 7, 4, 6, 10, 8
+
+```{r}
+#Checking unique values in each column that is relevant to movement of vehicles and severity of crash
+unique(clean_traffic_data$collision_severity) 
+unique(clean_traffic_data$move_pre_acc) 
+unique(clean_traffic_data$type_of_collision) 
+unique(clean_traffic_data$mviw) 
+unique(clean_traffic_data$ped_action) 
+unique(clean_traffic_data$vz_pcf_code) 
+unique(clean_traffic_data$vz_pcf_description) 
+unique(clean_traffic_data$oaf_viol_section) 
+unique(clean_traffic_data$number_killed) 
+unique(clean_traffic_data$number_injured) 
+```

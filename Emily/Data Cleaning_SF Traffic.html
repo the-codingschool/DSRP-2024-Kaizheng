@@ -136,20 +136,661 @@ Attaching package: 'janitor'</code></pre>
 </section>
 <section id="reading-in-data" class="level3">
 <h3 class="anchored" data-anchor-id="reading-in-data">Reading in Data</h3>
-<p>When you click the <strong>Render</strong> button a document will be generated that includes both content and the output of embedded code. You can embed code like this:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Define url of data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the dataset into a dataframe called traffic_d8ata</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>traffic_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(url)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>New names:
+• `` -&gt; `...1`</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
+e.g.:
+  dat &lt;- vroom(...)
+  problems(dat)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 31995 Columns: 86
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (63): geocode_source, geocode_location, collision_datetime, collision_d...
+dbl  (22): ...1, unique_id, cnn_intrsctn_fkey, cnn_sgmt_fkey, case_id_pkey, ...
+time  (1): collision_time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
+<pre><code># A tibble: 31,995 × 86
+     ...1 unique_id cnn_intrsctn_fkey cnn_sgmt_fkey case_id_pkey tb_latitude
+    &lt;dbl&gt;     &lt;dbl&gt;             &lt;dbl&gt;         &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;
+ 1  30861    248271          33348000      10256000    190000275        37.7
+ 2  24117     97475          25934000            NA    190000695        37.8
+ 3  44458     97470          25934000            NA    190000695        37.8
+ 4  22911     96463          33287000       2480201    190001897        37.7
+ 5  30248     96465          26434000       6624000    190001944        37.8
+ 6  30726     96459          26434000       6624000    190001944        37.8
+ 7  91614     96337          24189000      10659000    190002180        37.8
+ 8 104245     96334          24189000      10659000    190002180        37.8
+ 9  95651     96172          21135000       3316000    190002726        37.7
+10 123048     96173          21135000       3316000    190002726        37.7
+# ℹ 31,985 more rows
+# ℹ 80 more variables: tb_longitude &lt;dbl&gt;, geocode_source &lt;chr&gt;,
+#   geocode_location &lt;chr&gt;, collision_datetime &lt;chr&gt;, collision_date &lt;chr&gt;,
+#   collision_time &lt;time&gt;, accident_year &lt;dbl&gt;, month &lt;chr&gt;, day_of_week &lt;chr&gt;,
+#   time_cat &lt;chr&gt;, juris &lt;dbl&gt;, officer_id &lt;chr&gt;, reporting_district &lt;chr&gt;,
+#   beat_number &lt;chr&gt;, primary_rd &lt;chr&gt;, secondary_rd &lt;chr&gt;, distance &lt;dbl&gt;,
+#   direction &lt;chr&gt;, weather_1 &lt;chr&gt;, weather_2 &lt;chr&gt;, …</code></pre>
 </div>
 </div>
-<p>You can add options to executable code like this</p>
+</section>
+<section id="overview-of-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="overview-of-dataset">Overview of Dataset</h3>
 <div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Preview the first few rows</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 4</code></pre>
+<pre><code># A tibble: 6 × 86
+   ...1 unique_id cnn_intrsctn_fkey cnn_sgmt_fkey case_id_pkey tb_latitude
+  &lt;dbl&gt;     &lt;dbl&gt;             &lt;dbl&gt;         &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;
+1 30861    248271          33348000      10256000    190000275        37.7
+2 24117     97475          25934000            NA    190000695        37.8
+3 44458     97470          25934000            NA    190000695        37.8
+4 22911     96463          33287000       2480201    190001897        37.7
+5 30248     96465          26434000       6624000    190001944        37.8
+6 30726     96459          26434000       6624000    190001944        37.8
+# ℹ 80 more variables: tb_longitude &lt;dbl&gt;, geocode_source &lt;chr&gt;,
+#   geocode_location &lt;chr&gt;, collision_datetime &lt;chr&gt;, collision_date &lt;chr&gt;,
+#   collision_time &lt;time&gt;, accident_year &lt;dbl&gt;, month &lt;chr&gt;, day_of_week &lt;chr&gt;,
+#   time_cat &lt;chr&gt;, juris &lt;dbl&gt;, officer_id &lt;chr&gt;, reporting_district &lt;chr&gt;,
+#   beat_number &lt;chr&gt;, primary_rd &lt;chr&gt;, secondary_rd &lt;chr&gt;, distance &lt;dbl&gt;,
+#   direction &lt;chr&gt;, weather_1 &lt;chr&gt;, weather_2 &lt;chr&gt;,
+#   collision_severity &lt;chr&gt;, type_of_collision &lt;chr&gt;, mviw &lt;chr&gt;, …</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Overview of dataframe</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>spc_tbl_ [31,995 × 86] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+ $ ...1                        : num [1:31995] 30861 24117 44458 22911 30248 ...
+ $ unique_id                   : num [1:31995] 248271 97475 97470 96463 96465 ...
+ $ cnn_intrsctn_fkey           : num [1:31995] 33348000 25934000 25934000 33287000 26434000 ...
+ $ cnn_sgmt_fkey               : num [1:31995] 10256000 NA NA 2480201 6624000 ...
+ $ case_id_pkey                : num [1:31995] 1.9e+08 1.9e+08 1.9e+08 1.9e+08 1.9e+08 ...
+ $ tb_latitude                 : num [1:31995] 37.7 37.8 37.8 37.7 37.8 ...
+ $ tb_longitude                : num [1:31995] -122 -122 -122 -122 -122 ...
+ $ geocode_source              : chr [1:31995] "SFPD-INTERIM DB" "SFPD-INTERIM DB" "SFPD-INTERIM DB" "SFPD-INTERIM DB" ...
+ $ geocode_location            : chr [1:31995] "CITY STREET" "CITY STREET" "CITY STREET" "CITY STREET" ...
+ $ collision_datetime          : chr [1:31995] "1/1/19 1:51" "1/1/19 8:48" "1/1/19 8:48" "1/1/19 17:55" ...
+ $ collision_date              : chr [1:31995] "1/1/19 00:00" "1/1/19 00:00" "1/1/19 00:00" "1/1/19 00:00" ...
+ $ collision_time              : 'hms' num [1:31995] 01:51:00 08:48:00 08:48:00 17:55:00 ...
+  ..- attr(*, "units")= chr "secs"
+ $ accident_year               : num [1:31995] 2019 2019 2019 2019 2019 ...
+ $ month                       : chr [1:31995] "January" "January" "January" "January" ...
+ $ day_of_week                 : chr [1:31995] "Tuesday" "Tuesday" "Tuesday" "Tuesday" ...
+ $ time_cat                    : chr [1:31995] "10:01 pm to 2:00 am" "6:01 am to 10:00 am" "6:01 am to 10:00 am" "2:01 pm to 6:00 pm" ...
+ $ juris                       : num [1:31995] 3801 3801 3801 3801 3801 ...
+ $ officer_id                  : chr [1:31995] "2238" "189" "189" "1345" ...
+ $ reporting_district          : chr [1:31995] "Ingleside" "Northern" "Northern" "Mission" ...
+ $ beat_number                 : chr [1:31995] "3H15E" "2" "2" "4D" ...
+ $ primary_rd                  : chr [1:31995] "PARIS ST" "LAGUNA ST" "LAGUNA ST" "CESAR CHAVEZ ST" ...
+ $ secondary_rd                : chr [1:31995] "ITALY AVE" "GROVE ST" "GROVE ST" "HAMPSHIRE ST" ...
+ $ distance                    : num [1:31995] 315 0 0 140 124 124 150 150 218 218 ...
+ $ direction                   : chr [1:31995] "North" "Not Stated" "Not Stated" "West" ...
+ $ weather_1                   : chr [1:31995] "Clear" "Clear" "Clear" "Clear" ...
+ $ weather_2                   : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ collision_severity          : chr [1:31995] "Injury (Complaint of Pain)" "Injury (Complaint of Pain)" "Injury (Complaint of Pain)" "Injury (Other Visible)" ...
+ $ type_of_collision           : chr [1:31995] "Sideswipe" "Not Stated" "Not Stated" "Other" ...
+ $ mviw                        : chr [1:31995] "Parked Motor Vehicle" "Not Stated" "Not Stated" "Non-Collision" ...
+ $ ped_action                  : chr [1:31995] "No Pedestrian Involved" "No Pedestrian Involved" "No Pedestrian Involved" "No Pedestrian Involved" ...
+ $ road_surface                : chr [1:31995] "Dry" "Dry" "Dry" "Dry" ...
+ $ road_cond_1                 : chr [1:31995] "No Unusual Condition" "No Unusual Condition" "No Unusual Condition" "No Unusual Condition" ...
+ $ road_cond_2                 : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ lighting                    : chr [1:31995] "Dark - Street Lights" "Daylight" "Daylight" "Dark - Street Lights" ...
+ $ control_device              : chr [1:31995] "Functioning" "None" "None" "None" ...
+ $ intersection                : chr [1:31995] "Midblock &gt; 20ft" "Intersection &lt;= 20ft" "Intersection &lt;= 20ft" "Midblock &gt; 20ft" ...
+ $ vz_pcf_code                 : chr [1:31995] "22350" "22450(a)" "22450(a)" "22350" ...
+ $ vz_pcf_group                : chr [1:31995] "22350" "22450(a)" "22450(a)" "22350" ...
+ $ vz_pcf_description          : chr [1:31995] "Unsafe speed for prevailing conditions" "Failure to stop at STOP sign" "Failure to stop at STOP sign" "Unsafe speed for prevailing conditions" ...
+ $ vz_pcf_link                 : chr [1:31995] "http://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&amp;sectionNum=22350" "http://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&amp;sectionNum=22450" "http://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&amp;sectionNum=22450" "http://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=VEH&amp;sectionNum=22350" ...
+ $ number_killed               : num [1:31995] 0 0 0 0 1 1 0 0 0 0 ...
+ $ number_injured              : num [1:31995] 1 5 5 1 0 0 1 1 1 1 ...
+ $ street_view                 : chr [1:31995] "https://maps.google.com/maps?q=&amp;layer=c&amp;cbll=37.7184718773,-122.437400947" "https://maps.google.com/maps?q=&amp;layer=c&amp;cbll=37.7773881948,-122.426452239" "https://maps.google.com/maps?q=&amp;layer=c&amp;cbll=37.7773881948,-122.426452239" "https://maps.google.com/maps?q=&amp;layer=c&amp;cbll=37.7486637559,-122.407214417" ...
+ $ dph_col_grp                 : chr [1:31995] "AA" "AA" "AA" "AA" ...
+ $ dph_col_grp_description     : chr [1:31995] "Vehicle(s) Only Involved" "Vehicle(s) Only Involved" "Vehicle(s) Only Involved" "Vehicle(s) Only Involved" ...
+ $ party_number_ckey           : num [1:31995] 1 2 1 1 2 1 2 1 1 2 ...
+ $ party_type                  : chr [1:31995] "Driver" "Driver" "Driver" "Driver" ...
+ $ at_fault                    : chr [1:31995] "Yes" "No" "Yes" "Yes" ...
+ $ party_sex                   : chr [1:31995] "Male" "Female" "Female" "Male" ...
+ $ party_age                   : num [1:31995] 33 48 65 22 39 84 49 58 34 58 ...
+ $ party_sobriety              : chr [1:31995] "Impairment Not Known" "Had Not Been Drinking" "Had Not Been Drinking" "Had Not Been Drinking" ...
+ $ party_drug_physical         : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ dir_of_travel               : chr [1:31995] "South" "East" "South" "East" ...
+ $ party_safety_equip_1        : chr [1:31995] "Air Bag Deployed" "Air Bag Not Deployed" "Air Bag Deployed" "Not Required" ...
+ $ party_safety_equip_2        : chr [1:31995] "Lap/Shoulder Harness Used" "Lap Belt Used" "Lap Belt Used" "Not Required" ...
+ $ finan_respons               : chr [1:31995] "Yes Proof of Insurance Obtained" "Yes Proof of Insurance Obtained" "Yes Proof of Insurance Obtained" "Not Stated" ...
+ $ sp_info_1                   : chr [1:31995] "Not Stated" "Cell Phone Not In Use" "Cell Phone Not In Use" "Cell Phone Not In Use" ...
+ $ sp_info_2                   : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ sp_info_3                   : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ oaf_viol_cat                : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ oaf_viol_section            : chr [1:31995] NA "Not Stated" "Not Stated" "Not Stated" ...
+ $ oaf_violation_code          : chr [1:31995] "Vehicle" "Not Stated" "Not Stated" "Not Stated" ...
+ $ oaf_violation_suffix        : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ oaf_1                       : chr [1:31995] "Violation" "None Apparent" "None Apparent" "None Apparent" ...
+ $ oaf_2                       : chr [1:31995] "None Apparent" "Not Stated" "Not Stated" "Not Stated" ...
+ $ party_number_killed         : num [1:31995] 0 0 0 0 0 1 0 0 0 0 ...
+ $ party_number_injured        : num [1:31995] 1 1 4 1 0 0 0 1 0 1 ...
+ $ move_pre_acc                : chr [1:31995] "Proceeding Straight" "Proceeding Straight" "Proceeding Straight" "Proceeding Straight" ...
+ $ vehicle_year                : num [1:31995] 1999 2007 2005 2018 2016 ...
+ $ vehicle_make                : chr [1:31995] "TOYT/RAV4/WHITE" "MERZ/S550/SILVER" "TOYT/RAV4/SILVER" "GENEZE/RED" ...
+ $ stwd_vehicle_type           : chr [1:31995] "Passenger Car" "Passenger Car" "Passenger Car" "Motor Driven Cycle/Scooter" ...
+ $ race                        : chr [1:31995] "Hispanic" "Other" "Asian" "Hispanic" ...
+ $ inattention                 : chr [1:31995] "Not Stated" "Not Stated" "Not Stated" "Not Stated" ...
+ $ special_info_f              : chr [1:31995] NA NA NA NA ...
+ $ special_info_g              : chr [1:31995] NA NA NA NA ...
+ $ street_of_travel            : chr [1:31995] "PARIS STREET" "GROVE STREET" "LAGUNA STREET" "CESAR CHAVEZ STREET" ...
+ $ vehicle_autonomous          : chr [1:31995] "Not applicable, conventional vehicle" "Not Stated" "Not Stated" "Not Stated" ...
+ $ point                       : chr [1:31995] "POINT (-122.437400947 37.718471877)" "POINT (-122.426452239 37.777388195)" "POINT (-122.426452239 37.777388195)" "POINT (-122.407214417 37.748663756)" ...
+ $ data_as_of                  : chr [1:31995] "1/28/19 00:00" "1/28/19 00:00" "1/28/19 00:00" "1/28/19 00:00" ...
+ $ data_updated_at             : chr [1:31995] "4/26/23 00:00" "4/26/23 00:00" "4/26/23 00:00" "4/26/23 00:00" ...
+ $ data_loaded_at              : chr [1:31995] "4/26/24 13:04" "4/26/24 13:04" "4/26/24 13:04" "4/26/24 13:04" ...
+ $ Neighborhoods               : num [1:31995] 90 22 22 53 25 25 53 53 53 53 ...
+ $ SF.Find.Neighborhoods       : num [1:31995] 90 22 22 53 25 25 53 53 53 53 ...
+ $ Current.Police.Districts    : num [1:31995] 9 4 4 3 7 7 3 3 3 3 ...
+ $ Current.Supervisor.Districts: num [1:31995] 1 11 11 2 11 11 9 9 2 2 ...
+ $ Analysis.Neighborhoods      : num [1:31995] 7 9 9 2 3 3 20 20 20 20 ...
+ - attr(*, "spec")=
+  .. cols(
+  ..   ...1 = col_double(),
+  ..   unique_id = col_double(),
+  ..   cnn_intrsctn_fkey = col_double(),
+  ..   cnn_sgmt_fkey = col_double(),
+  ..   case_id_pkey = col_double(),
+  ..   tb_latitude = col_double(),
+  ..   tb_longitude = col_double(),
+  ..   geocode_source = col_character(),
+  ..   geocode_location = col_character(),
+  ..   collision_datetime = col_character(),
+  ..   collision_date = col_character(),
+  ..   collision_time = col_time(format = ""),
+  ..   accident_year = col_double(),
+  ..   month = col_character(),
+  ..   day_of_week = col_character(),
+  ..   time_cat = col_character(),
+  ..   juris = col_double(),
+  ..   officer_id = col_character(),
+  ..   reporting_district = col_character(),
+  ..   beat_number = col_character(),
+  ..   primary_rd = col_character(),
+  ..   secondary_rd = col_character(),
+  ..   distance = col_double(),
+  ..   direction = col_character(),
+  ..   weather_1 = col_character(),
+  ..   weather_2 = col_character(),
+  ..   collision_severity = col_character(),
+  ..   type_of_collision = col_character(),
+  ..   mviw = col_character(),
+  ..   ped_action = col_character(),
+  ..   road_surface = col_character(),
+  ..   road_cond_1 = col_character(),
+  ..   road_cond_2 = col_character(),
+  ..   lighting = col_character(),
+  ..   control_device = col_character(),
+  ..   intersection = col_character(),
+  ..   vz_pcf_code = col_character(),
+  ..   vz_pcf_group = col_character(),
+  ..   vz_pcf_description = col_character(),
+  ..   vz_pcf_link = col_character(),
+  ..   number_killed = col_double(),
+  ..   number_injured = col_double(),
+  ..   street_view = col_character(),
+  ..   dph_col_grp = col_character(),
+  ..   dph_col_grp_description = col_character(),
+  ..   party_number_ckey = col_double(),
+  ..   party_type = col_character(),
+  ..   at_fault = col_character(),
+  ..   party_sex = col_character(),
+  ..   party_age = col_double(),
+  ..   party_sobriety = col_character(),
+  ..   party_drug_physical = col_character(),
+  ..   dir_of_travel = col_character(),
+  ..   party_safety_equip_1 = col_character(),
+  ..   party_safety_equip_2 = col_character(),
+  ..   finan_respons = col_character(),
+  ..   sp_info_1 = col_character(),
+  ..   sp_info_2 = col_character(),
+  ..   sp_info_3 = col_character(),
+  ..   oaf_viol_cat = col_character(),
+  ..   oaf_viol_section = col_character(),
+  ..   oaf_violation_code = col_character(),
+  ..   oaf_violation_suffix = col_character(),
+  ..   oaf_1 = col_character(),
+  ..   oaf_2 = col_character(),
+  ..   party_number_killed = col_double(),
+  ..   party_number_injured = col_double(),
+  ..   move_pre_acc = col_character(),
+  ..   vehicle_year = col_double(),
+  ..   vehicle_make = col_character(),
+  ..   stwd_vehicle_type = col_character(),
+  ..   race = col_character(),
+  ..   inattention = col_character(),
+  ..   special_info_f = col_character(),
+  ..   special_info_g = col_character(),
+  ..   street_of_travel = col_character(),
+  ..   vehicle_autonomous = col_character(),
+  ..   point = col_character(),
+  ..   data_as_of = col_character(),
+  ..   data_updated_at = col_character(),
+  ..   data_loaded_at = col_character(),
+  ..   Neighborhoods = col_double(),
+  ..   SF.Find.Neighborhoods = col_double(),
+  ..   Current.Police.Districts = col_double(),
+  ..   Current.Supervisor.Districts = col_double(),
+  ..   Analysis.Neighborhoods = col_double()
+  .. )
+ - attr(*, "problems")=&lt;externalptr&gt; </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Summary of stats based on column</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      ...1          unique_id      cnn_intrsctn_fkey  cnn_sgmt_fkey     
+ Min.   :     9   Min.   : 94654   Min.   :20006000   Min.   :  100000  
+ 1st Qu.: 32345   1st Qu.:622444   1st Qu.:23626000   1st Qu.: 3542000  
+ Median : 77579   Median :630486   Median :24881000   Median : 7120000  
+ Mean   : 64964   Mean   :531452   Mean   :25715519   Mean   : 6989916  
+ 3rd Qu.: 90613   3rd Qu.:638530   3rd Qu.:26611000   3rd Qu.:10143000  
+ Max.   :124395   Max.   :674048   Max.   :54356000   Max.   :19999101  
+                                   NA's   :13         NA's   :19518     
+  case_id_pkey        tb_latitude     tb_longitude    geocode_source    
+ Min.   :2.003e+07   Min.   :37.71   Min.   :-122.5   Length:31995      
+ 1st Qu.:2.001e+08   1st Qu.:37.75   1st Qu.:-122.4   Class :character  
+ Median :2.105e+08   Median :37.77   Median :-122.4   Mode  :character  
+ Mean   :5.036e+08   Mean   :37.76   Mean   :-122.4                     
+ 3rd Qu.:2.208e+08   3rd Qu.:37.78   3rd Qu.:-122.4                     
+ Max.   :9.335e+12   Max.   :37.83   Max.   :-122.4                     
+ NA's   :4           NA's   :31      NA's   :31                         
+ geocode_location   collision_datetime collision_date     collision_time   
+ Length:31995       Length:31995       Length:31995       Length:31995     
+ Class :character   Class :character   Class :character   Class1:hms       
+ Mode  :character   Mode  :character   Mode  :character   Class2:difftime  
+                                                          Mode  :numeric   
+                                                                           
+                                                                           
+                                                                           
+ accident_year     month           day_of_week          time_cat        
+ Min.   :2019   Length:31995       Length:31995       Length:31995      
+ 1st Qu.:2020   Class :character   Class :character   Class :character  
+ Median :2021   Mode  :character   Mode  :character   Mode  :character  
+ Mean   :2021                                                           
+ 3rd Qu.:2022                                                           
+ Max.   :2026                                                           
+                                                                        
+     juris       officer_id        reporting_district beat_number       
+ Min.   : 195   Length:31995       Length:31995       Length:31995      
+ 1st Qu.:3801   Class :character   Class :character   Class :character  
+ Median :3801   Mode  :character   Mode  :character   Mode  :character  
+ Mean   :3800                                                           
+ 3rd Qu.:3801                                                           
+ Max.   :3801                                                           
+ NA's   :2                                                              
+  primary_rd        secondary_rd          distance        direction        
+ Length:31995       Length:31995       Min.   :   0.00   Length:31995      
+ Class :character   Class :character   1st Qu.:   0.00   Class :character  
+ Mode  :character   Mode  :character   Median :   0.00   Mode  :character  
+                                       Mean   :  46.85                     
+                                       3rd Qu.:  46.00                     
+                                       Max.   :3448.00                     
+                                                                           
+  weather_1          weather_2         collision_severity type_of_collision 
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+     mviw            ped_action        road_surface       road_cond_1       
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ road_cond_2          lighting         control_device     intersection      
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ vz_pcf_code        vz_pcf_group       vz_pcf_description vz_pcf_link       
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ number_killed     number_injured   street_view        dph_col_grp       
+ Min.   :0.00000   Min.   : 0.000   Length:31995       Length:31995      
+ 1st Qu.:0.00000   1st Qu.: 1.000   Class :character   Class :character  
+ Median :0.00000   Median : 1.000   Mode  :character   Mode  :character  
+ Mean   :0.01194   Mean   : 1.277                                        
+ 3rd Qu.:0.00000   3rd Qu.: 1.000                                        
+ Max.   :4.00000   Max.   :10.000                                        
+                                                                         
+ dph_col_grp_description party_number_ckey  party_type       
+ Length:31995            Min.   : 1.000    Length:31995      
+ Class :character        1st Qu.: 1.000    Class :character  
+ Mode  :character        Median : 2.000    Mode  :character  
+                         Mean   : 1.659                      
+                         3rd Qu.: 2.000                      
+                         Max.   :15.000                      
+                                                             
+   at_fault          party_sex           party_age       party_sobriety    
+ Length:31995       Length:31995       Min.   :-970.00   Length:31995      
+ Class :character   Class :character   1st Qu.:  29.00   Class :character  
+ Mode  :character   Mode  :character   Median :  39.00   Mode  :character  
+                                       Mean   :  41.59                     
+                                       3rd Qu.:  54.00                     
+                                       Max.   : 108.00                     
+                                       NA's   :5593                        
+ party_drug_physical dir_of_travel      party_safety_equip_1
+ Length:31995        Length:31995       Length:31995        
+ Class :character    Class :character   Class :character    
+ Mode  :character    Mode  :character   Mode  :character    
+                                                            
+                                                            
+                                                            
+                                                            
+ party_safety_equip_2 finan_respons       sp_info_1          sp_info_2        
+ Length:31995         Length:31995       Length:31995       Length:31995      
+ Class :character     Class :character   Class :character   Class :character  
+ Mode  :character     Mode  :character   Mode  :character   Mode  :character  
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+  sp_info_3         oaf_viol_cat       oaf_viol_section   oaf_violation_code
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ oaf_violation_suffix    oaf_1              oaf_2           party_number_killed
+ Length:31995         Length:31995       Length:31995       Min.   :0.000000   
+ Class :character     Class :character   Class :character   1st Qu.:0.000000   
+ Mode  :character     Mode  :character   Mode  :character   Median :0.000000   
+                                                            Mean   :0.004938   
+                                                            3rd Qu.:0.000000   
+                                                            Max.   :2.000000   
+                                                                               
+ party_number_injured move_pre_acc        vehicle_year  vehicle_make      
+ Min.   :0.0000       Length:31995       Min.   :   0   Length:31995      
+ 1st Qu.:0.0000       Class :character   1st Qu.:2007   Class :character  
+ Median :1.0000       Mode  :character   Median :2014   Mode  :character  
+ Mean   :0.5908                          Mean   :2002                     
+ 3rd Qu.:1.0000                          3rd Qu.:2018                     
+ Max.   :9.0000                          Max.   :2916                     
+                                         NA's   :8846                     
+ stwd_vehicle_type      race           inattention        special_info_f    
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ special_info_g     street_of_travel   vehicle_autonomous    point          
+ Length:31995       Length:31995       Length:31995       Length:31995      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+  data_as_of        data_updated_at    data_loaded_at     Neighborhoods   
+ Length:31995       Length:31995       Length:31995       Min.   :  1.00  
+ Class :character   Class :character   Class :character   1st Qu.: 28.00  
+ Mode  :character   Mode  :character   Mode  :character   Median : 52.00  
+                                                          Mean   : 54.33  
+                                                          3rd Qu.: 86.00  
+                                                          Max.   :117.00  
+                                                          NA's   :665     
+ SF.Find.Neighborhoods Current.Police.Districts Current.Supervisor.Districts
+ Min.   :  1.00        Min.   : 1.000           Min.   : 1.000              
+ 1st Qu.: 28.00        1st Qu.: 3.000           1st Qu.: 3.000              
+ Median : 52.00        Median : 4.000           Median : 8.000              
+ Mean   : 54.33        Mean   : 4.956           Mean   : 6.709              
+ 3rd Qu.: 86.00        3rd Qu.: 8.000           3rd Qu.:10.000              
+ Max.   :117.00        Max.   :10.000           Max.   :11.000              
+ NA's   :665           NA's   :62               NA's   :51                  
+ Analysis.Neighborhoods
+ Min.   : 1.00         
+ 1st Qu.: 8.00         
+ Median :20.00         
+ Mean   :20.14         
+ 3rd Qu.:34.00         
+ Max.   :41.00         
+ NA's   :60            </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Number of rows [31995]</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 31995</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Number of columns [86]</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ncol</span>(traffic_data) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 86</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Names of columns</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "...1"                         "unique_id"                   
+ [3] "cnn_intrsctn_fkey"            "cnn_sgmt_fkey"               
+ [5] "case_id_pkey"                 "tb_latitude"                 
+ [7] "tb_longitude"                 "geocode_source"              
+ [9] "geocode_location"             "collision_datetime"          
+[11] "collision_date"               "collision_time"              
+[13] "accident_year"                "month"                       
+[15] "day_of_week"                  "time_cat"                    
+[17] "juris"                        "officer_id"                  
+[19] "reporting_district"           "beat_number"                 
+[21] "primary_rd"                   "secondary_rd"                
+[23] "distance"                     "direction"                   
+[25] "weather_1"                    "weather_2"                   
+[27] "collision_severity"           "type_of_collision"           
+[29] "mviw"                         "ped_action"                  
+[31] "road_surface"                 "road_cond_1"                 
+[33] "road_cond_2"                  "lighting"                    
+[35] "control_device"               "intersection"                
+[37] "vz_pcf_code"                  "vz_pcf_group"                
+[39] "vz_pcf_description"           "vz_pcf_link"                 
+[41] "number_killed"                "number_injured"              
+[43] "street_view"                  "dph_col_grp"                 
+[45] "dph_col_grp_description"      "party_number_ckey"           
+[47] "party_type"                   "at_fault"                    
+[49] "party_sex"                    "party_age"                   
+[51] "party_sobriety"               "party_drug_physical"         
+[53] "dir_of_travel"                "party_safety_equip_1"        
+[55] "party_safety_equip_2"         "finan_respons"               
+[57] "sp_info_1"                    "sp_info_2"                   
+[59] "sp_info_3"                    "oaf_viol_cat"                
+[61] "oaf_viol_section"             "oaf_violation_code"          
+[63] "oaf_violation_suffix"         "oaf_1"                       
+[65] "oaf_2"                        "party_number_killed"         
+[67] "party_number_injured"         "move_pre_acc"                
+[69] "vehicle_year"                 "vehicle_make"                
+[71] "stwd_vehicle_type"            "race"                        
+[73] "inattention"                  "special_info_f"              
+[75] "special_info_g"               "street_of_travel"            
+[77] "vehicle_autonomous"           "point"                       
+[79] "data_as_of"                   "data_updated_at"             
+[81] "data_loaded_at"               "Neighborhoods"               
+[83] "SF.Find.Neighborhoods"        "Current.Police.Districts"    
+[85] "Current.Supervisor.Districts" "Analysis.Neighborhoods"      </code></pre>
 </div>
 </div>
-<p>The <code>echo: false</code> option disables the printing of code (only output is displayed).</p>
+<section id="findings" class="level4">
+<h4 class="anchored" data-anchor-id="findings">Findings:</h4>
+<ul>
+<li><p>Number of rows is 31995</p></li>
+<li><p>Number of columns is 86</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="cleaning" class="level2">
+<h2 class="anchored" data-anchor-id="cleaning">Cleaning</h2>
+<section id="copying-dataset-into-new-name" class="level3">
+<h3 class="anchored" data-anchor-id="copying-dataset-into-new-name">Copying dataset into new name</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Copying dataset into clean_traffic_data</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>clean_traffic_data <span class="ot">&lt;-</span> traffic_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="replacing-placeholder-values-such-with-na" class="level3">
+<h3 class="anchored" data-anchor-id="replacing-placeholder-values-such-with-na">Replacing placeholder values such with NA</h3>
+<p>We can clearly see some columns have ‘Not Stated’ in them from printing the dataset: (direction, weather_1, weather_2, type_of_collision, mviw, ped_action, road_surface, road_cond_1, road_cond_2, party_sex, party_sobriety, party_drug_physical, party_safety_equip_1, party_safety_equip_2, finan_respons, sp_info_1, sp_info_2, sp_info_3, oaf_viol_cat, oaf_viol_section, oaf_violation_code, oaf_violation_suffix, oaf_1, oaf_2, move_pre_acc, race, inattention, vehicle_autonomous.</p>
+<p>Some other columns have ‘Unknown’ in them: vz_pcf_code, vz_pcf_group, vz_pcf_description, party_safety_equip_1, party_safety_equip_2</p>
+<p>Other types: party_sobriety (Impairment Not Known) and party_safety_equip_1 (Not required)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Replacing string 'Not Stated' with NA</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>clean_traffic_data[clean_traffic_data <span class="sc">==</span> <span class="st">'Not Stated'</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Replacing string 'Not Stated' with Unknown</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>clean_traffic_data[clean_traffic_data <span class="sc">==</span> <span class="st">'Unknown'</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Replacing string 'Impairment Not Known' with NA </span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>clean_traffic_data[clean_traffic_data <span class="sc">==</span> <span class="st">'Impairment Not Known'</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="co">#Counting number of NAs in each column</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>na_counts_base <span class="ot">&lt;-</span> <span class="fu">colSums</span>(<span class="fu">is.na</span>(clean_traffic_data))</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(na_counts_base)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                        ...1                    unique_id 
+                           0                            0 
+           cnn_intrsctn_fkey                cnn_sgmt_fkey 
+                          13                        19518 
+                case_id_pkey                  tb_latitude 
+                           4                           31 
+                tb_longitude               geocode_source 
+                          31                            0 
+            geocode_location           collision_datetime 
+                           0                            0 
+              collision_date               collision_time 
+                           0                           20 
+               accident_year                        month 
+                           0                            0 
+                 day_of_week                     time_cat 
+                          16                           10 
+                       juris                   officer_id 
+                           2                          172 
+          reporting_district                  beat_number 
+                          27                         1946 
+                  primary_rd                 secondary_rd 
+                           0                           41 
+                    distance                    direction 
+                           0                        19452 
+                   weather_1                    weather_2 
+                         379                        31325 
+          collision_severity            type_of_collision 
+                           0                          906 
+                        mviw                   ped_action 
+                        1017                          239 
+                road_surface                  road_cond_1 
+                         630                         1103 
+                 road_cond_2                     lighting 
+                       31910                          299 
+              control_device                 intersection 
+                         685                            0 
+                 vz_pcf_code                 vz_pcf_group 
+                        1510                         1657 
+          vz_pcf_description                  vz_pcf_link 
+                        1711                         1714 
+               number_killed               number_injured 
+                           0                            0 
+                 street_view                  dph_col_grp 
+                           0                            1 
+     dph_col_grp_description            party_number_ckey 
+                           0                            0 
+                  party_type                     at_fault 
+                           0                            0 
+                   party_sex                    party_age 
+                        3040                         5593 
+              party_sobriety          party_drug_physical 
+                        8381                        29042 
+               dir_of_travel         party_safety_equip_1 
+                        1518                         9514 
+        party_safety_equip_2                finan_respons 
+                       11389                         6925 
+                   sp_info_1                    sp_info_2 
+                        6954                        31592 
+                   sp_info_3                 oaf_viol_cat 
+                       31993                        31995 
+            oaf_viol_section           oaf_violation_code 
+                       28261                        28199 
+        oaf_violation_suffix                        oaf_1 
+                       31995                         5331 
+                       oaf_2          party_number_killed 
+                       30394                            0 
+        party_number_injured                 move_pre_acc 
+                           0                         1855 
+                vehicle_year                 vehicle_make 
+                        8846                         4234 
+           stwd_vehicle_type                         race 
+                         141                         4079 
+                 inattention               special_info_f 
+                       31844                        31995 
+              special_info_g             street_of_travel 
+                       31995                         1020 
+          vehicle_autonomous                        point 
+                       13556                           31 
+                  data_as_of              data_updated_at 
+                           0                            0 
+              data_loaded_at                Neighborhoods 
+                           0                          665 
+       SF.Find.Neighborhoods     Current.Police.Districts 
+                         665                           62 
+Current.Supervisor.Districts       Analysis.Neighborhoods 
+                          51                           60 </code></pre>
+</div>
+</div>
+</section>
+<section id="other-cleaning-processes-duplicates-full-na-rowscols" class="level3">
+<h3 class="anchored" data-anchor-id="other-cleaning-processes-duplicates-full-na-rowscols">Other cleaning processes (Duplicates, Full NA rows/cols)</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Finding duplicate records (none found in all columns)</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>dupes <span class="ot">&lt;-</span> <span class="fu">get_dupes</span>(clean_traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>No variable names specified - using all columns.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>No duplicate combinations found of: ...1, unique_id, cnn_intrsctn_fkey, cnn_sgmt_fkey, case_id_pkey, tb_latitude, tb_longitude, geocode_source, geocode_location, ... and 77 other variables</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Removing fully NA rows or cols in dataset (there are none found here)</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>clean_traffic_data <span class="ot">&lt;-</span> <span class="fu">remove_empty</span>(clean_traffic_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>value for "which" not specified, defaulting to c("rows", "cols")</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ncol</span>(clean_traffic_data) <span class="co">#Checking if there are less columns now</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 82</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(clean_traffic_data) <span class="co">#Checking if there are less rows now</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 31995</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>clean_traffic_data[clean_traffic_data <span class="sc">==</span> <span class="st">'Other than driver'</span>] <span class="ot">&lt;-</span> <span class="st">'Other Than Driver'</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>clean_traffic_data[clean_traffic_data <span class="sc">==</span> <span class="st">'Other improper driving'</span>] <span class="ot">&lt;-</span> <span class="st">'Other Improper Driving'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 </section>
 </section>

@@ -24,13 +24,14 @@ library(readr)
 
 ```{r}
 #Define url of data
-url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
+url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
+
+#alternate url: url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
+
 # Load the dataset into a dataframe called traffic_d8ata
 traffic_data <- read_csv(url)
 print(traffic_data)
 ```
-
-"
 
 ### Overview of Dataset
 
@@ -57,7 +58,7 @@ names(traffic_data)
 
 ## Cleaning
 
-### Copying dataset into new name 
+### Copying dataset into new name
 
 ```{r}
 #Copying dataset into clean_traffic_data
@@ -80,8 +81,10 @@ clean_traffic_data[clean_traffic_data == 'Unknown'] <- NA
 #Replacing string 'Impairment Not Known' with NA 
 clean_traffic_data[clean_traffic_data == 'Impairment Not Known'] <- NA
 
-print(traffic_data)
-print(clean_traffic_data)
+
+#Counting number of NAs in each column
+na_counts_base <- colSums(is.na(clean_traffic_data))
+print(na_counts_base)
 ```
 
 ### Other cleaning processes (Duplicates, Full NA rows/cols)
@@ -94,4 +97,12 @@ dupes <- get_dupes(clean_traffic_data)
 clean_traffic_data <- remove_empty(clean_traffic_data)
 ncol(clean_traffic_data) #Checking if there are less columns now
 nrow(clean_traffic_data) #Checking if there are less rows now
+
+#vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'
+clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
+clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
+```
+
+```{r}
+write.csv(clean_traffic_data,'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv', row.names = FALSE)
 ```
