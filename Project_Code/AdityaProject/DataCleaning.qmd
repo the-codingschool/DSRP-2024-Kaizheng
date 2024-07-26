@@ -33,6 +33,8 @@ traffic
 
 ```
 
+
+
 ```{r}
 ## Visualizing some basic data
 
@@ -81,4 +83,10 @@ by_age <- filter(accidenters, party_age > 0)
 
 ##Histogram by age and subdivided by gender
 ggplot(data = by_age, aes(x=party_age, fill = factor(party_sex))) + geom_histogram()
+
+
 ```
+```{r}
+
+```
+
