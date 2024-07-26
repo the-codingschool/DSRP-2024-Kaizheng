@@ -1,28 +1,39 @@
-```{# Are accidents caused more by certain demographics? Gender, age, income}
+# Are accidents caused more by certain demographics? Gender, age, income}
+
 # 
+
 # Are accidents caused more by certain types of cars?
+
 # 
+
 # Are accidents happening more at certain times of the day? Divide day into 3 hr windows maybe
+
 # 
+
 # Are accidents happening more in certain areas of the streets? Intersections, freeways, regular portion of the streets? And what speed limit zones?
+
 # 
+
 # What % are caused due to speeding? Any other reason stands out?
+
 # 
+
 # How many cars on average ( daily /monthly/ annually ) get involved in accidents ( responsible or not )
+
 # 
+
 # Is there any trend where and what times - multiple car ( 3 or more cars ) accidents happen?
+
 # 
+
 # How many accidents are single car accidents? What are the main causes?
 
-
-
-
-
-{r}
+```{r}
 
 #install.packages("readr")
 library(readr)
 library(dplyr)
+library(janitor)
 
 getwd()
 
@@ -32,8 +43,6 @@ traffic <- read.csv("Project_Code/Data/data_traffic.csv")
 traffic
 
 ```
-
-
 
 ```{r}
 ## Visualizing some basic data
@@ -71,7 +80,7 @@ accidenters <- subset(traffic, at_fault == "Yes")
 
 #head(accidenters)
 
-
+accidenters
 
 
 #by_age <- subset(accidenters, !is.na(party_age))
@@ -86,7 +95,35 @@ ggplot(data = by_age, aes(x=party_age, fill = factor(party_sex))) + geom_histogr
 
 
 ```
+
 ```{r}
 
-```
 
+#Compares the types of vehicle
+ggplot(traffic, aes(stwd_vehicle_type)) + geom_bar() + theme(axis.text.x = element_text(angle = 90))
+
+
+
+
+primary_streets <- get_dupes(accidenters, primary_rd)
+primary_streets 
+
+secondary_streets <- get_dupes(accidenters, secondary_rd)
+secondary_streets
+
+
+
+important_street <- "MISSION ST"
+
+acc_on_imp <- accidenters
+
+acc_on_imp <- acc_on_imp |>
+  subset(primary_rd == important_street) |>
+  select(, c(primary_rd, vz_pcf_description))
+
+acc_on_imp
+
+
+ggplot(acc_on_imp, aes(vz_pcf_description)) + geom_bar()
+
+```
