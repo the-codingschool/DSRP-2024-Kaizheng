@@ -115,15 +115,29 @@ secondary_streets
 
 important_street <- "MISSION ST"
 
-acc_on_imp <- accidenters
 
-acc_on_imp <- acc_on_imp |>
-  subset(primary_rd == important_street) |>
-  select(, c(primary_rd, vz_pcf_description))
+acc_on_imp <- subset(accidenters, primary_rd == important_street)
 
 acc_on_imp
 
 
 ggplot(acc_on_imp, aes(vz_pcf_description)) + geom_bar()
+
+
+
+
+
+count(acc_on_imp, vz_pcf_description)
+
+
+#62 Driver or Bicyclist to yield right-of-way at crosswalks
+#41 Following too closely prohibited
+#31 illegal U turn in business district
+#68 Red signal - driver or bicyclist responsibilities
+#93 Unsafe speed for prevailing conditions
+#73 unsafe turn or lange change prohibited
+#43 Violation of right of way - left turn
+
+
 
 ```
