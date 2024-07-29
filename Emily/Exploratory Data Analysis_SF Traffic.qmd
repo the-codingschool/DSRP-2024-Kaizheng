@@ -1,7 +1,5 @@
 ---
-title: "Exploratory Data Analysis_SF Traffic"
-format: html
-editor: visual
+--- title: "Exploratory Data Analysis_SF Traffic" format: html editor: visual ---
 ---
 
 # Part 2: Exploratory Data Analysis-SF Traffic
@@ -10,24 +8,12 @@ editor: visual
 
 ### Import All Necessary Packages
 
-```{r}
-library(janitor)
-library(tidyr) 
-library(tidyverse) 
-library(dplyr) 
-library(ggplot2) 
-library(readr)
+```{r} library(janitor) library(tidyr)  library(tidyverse)  library(dplyr)  library(ggplot2)  library(readr)}
 ```
 
 ### Reading in Data
 
-```{r}
-#Define url of data
-url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'
-
-# Load the dataset into a dataframe called traffic_data
-clean_traffic_data <- read_csv(url)
-print(clean_traffic_data)
+```{r} #Define url of data url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'  # Load the dataset into a dataframe called traffic_data clean_traffic_data <- read_csv(url) print(clean_traffic_data)}
 ```
 
 ## Basic Exploration
@@ -52,37 +38,57 @@ print(clean_traffic_data)
 
 **number_injured (10)**: 1, 5, 0, 3, 2, 7, 4, 6, 10, 8
 
-```{r}
-#Checking unique values in each column that is relevant to movement of vehicles and severity of crash
-unique(clean_traffic_data$collision_severity) 
-unique(clean_traffic_data$move_pre_acc) 
-unique(clean_traffic_data$type_of_collision) 
-unique(clean_traffic_data$mviw) 
-unique(clean_traffic_data$ped_action) 
-unique(clean_traffic_data$vz_pcf_code) 
-unique(clean_traffic_data$vz_pcf_description)
-unique(clean_traffic_data$number_killed) 
-unique(clean_traffic_data$number_injured) 
+```{r} #Checking unique values in each column that is relevant to movement of vehicles and severity of crash unique(clean_traffic_data$collision_severity)  unique(clean_traffic_data$move_pre_acc)  unique(clean_traffic_data$type_of_collision)  unique(clean_traffic_data$mviw)  unique(clean_traffic_data$ped_action)  unique(clean_traffic_data$vz_pcf_code)  unique(clean_traffic_data$vz_pcf_description) unique(clean_traffic_data$number_killed)  unique(clean_traffic_data$number_injured)}
 ```
 
 ## Visualization
 
 ### type_of_collision
 
-```{r}
-#bar graph of clean_traffic_data
-ggplot(data = clean_traffic_data, aes(x = type_of_collision, fill=type_of_collision)) + 
-  geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+**Plot of original type_of collision:**
 
+```{r} #bar graph of occurences of type_of_collision ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision)), aes(x = type_of_collision, fill=type_of_collision)) +    geom_bar() +   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())}
+```
+
+**Type_of_collision_merge:**
+
+-   Merge 'Overturned' into 'Other'
+
+```{r} #Duplicate type_of_collision as type_of_collision_merge clean_traffic_data$type_of_collision_merge=clean_traffic_data$type_of_collision   #Merge 'Overturned' into 'Other" clean_traffic_data$type_of_collision_merge[clean_traffic_data$type_of_collision_merge=='Overturned'] <- 'Other'}
+```
+
+```{r} #bar graph of occurences of type_of_collision ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, fill=type_of_collision_merge)) +    geom_bar() +   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())}
 ```
 
 ### move_pre_acc
 
-```{r}
-#bar graph of move_pre_acc
-ggplot(data = clean_traffic_data, aes(x = move_pre_acc, fill=move_pre_acc)) + 
-  geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+**Plot of original move_pre_acc:**
 
+```{r} #bar graph of occurences of move_pre_acc ggplot(data = clean_traffic_data, aes(x = move_pre_acc, fill=move_pre_acc)) +    geom_bar() +   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())}
+```
+
+**Type_of_collision_merge:**
+
+```{r} unique(clean_traffic_data$move_pre_acc)}
+```
+
+-   
+
+-   Merge 'Entering Traffic', 'Merging' and 'Changing Lanes' Into 'Merging/Changing Lanes'
+
+-   Merge 'Other Unsaffe Turning', 'Ran Off Road' into 'Other'
+
+-   Merge 'Parked' and 'Stopped' into 'Stopped/Parked'
+
+-   Merge 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane' + 'Traveling Wrong Way' + 'Other Unsafe Turning' + 'Ran Off Road' into 'Unsafe Behavior'
+
+```{r} #Duplicate type_of_collision as type_of_collision_merge clean_traffic_data$move_pre_acc_merge=clean_traffic_data$move_pre_acc   #Merge 'Entering Traffic' and 'Changing Lanes' Into 'Merging/Changing Lanes' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Entering Traffic'] <- 'Merging/Changing Lanes' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Changing Lanes'] <- 'Merging/Changing Lanes' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Merging'] <- 'Merging/Changing Lanes'  #Merge 'Parked' and 'Stopped' into 'Stopped/Parked' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Parked'] <- 'Stopped/Parked' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Stopped'] <- 'Stopped/Parked'  #Merge 'Other Unsafe Turning' and 'Ran Off Road' into 'Unsafe Behavior' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Ran Off Road'] <- 'Unsafe Behavior' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Other Unsafe Turning'] <- 'Unsafe Behavior' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossed Into Opposing Lane'] <- 'Unsafe Behavior' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossing Into Opposing Lane'] <- 'Unsafe Behavior' clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Traveling Wrong Way'] <- 'Unsafe Behavior'}
+```
+
+```{r} #Duplicate type_of_collision as type_of_collision_merge clean_traffic_data$move_pre_acc_merge=clean_traffic_data$move_pre_acc   #bar graph of occurences of type_of_collision ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=move_pre_acc_merge)) +    geom_bar() +   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())}
+```
+
+## Saving Mechanism
+
+```{r} write.csv(clean_traffic_data,'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv', row.names = FALSE)}
 ```
