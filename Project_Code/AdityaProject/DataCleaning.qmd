@@ -82,6 +82,9 @@ accidenters <- subset(traffic, at_fault == "Yes")
 
 accidenters
 
+pie(table(accidenters$race))
+
+
 
 #by_age <- subset(accidenters, !is.na(party_age))
 #by_age <- subset(by_age, party_age > 15)      
@@ -129,7 +132,6 @@ ggplot(acc_on_imp, aes(vz_pcf_description)) + geom_bar()
 
 count(acc_on_imp, vz_pcf_description)
 
-
 #62 Driver or Bicyclist to yield right-of-way at crosswalks
 #41 Following too closely prohibited
 #31 illegal U turn in business district
@@ -137,6 +139,119 @@ count(acc_on_imp, vz_pcf_description)
 #93 Unsafe speed for prevailing conditions
 #73 unsafe turn or lange change prohibited
 #43 Violation of right of way - left turn
+
+
+count(acc_on_imp, distance == 0)
+
+#354 incidents at intersection, 294 not at intersection
+
+```
+
+```{r}
+#people_demo <- select(traffic, c(party_type, at_fault, party_sex, party_age, party_sobriety, race))
+
+people_demo <- select(traffic, c(at_fault, party_sex, party_age, party_sobriety, race))
+
+people_demo <- filter(people_demo, !is.na(party_age))
+
+#people_demo
+
+#count(people_demo, party_type)
+
+#count(people_demo, party_sex)
+
+#count(people_demo, party_sobriety)
+
+#count(people_demo, race)
+
+people_demo_changed <- people_demo
+
+
+people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Male", 1)
+people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Female", 2)
+people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Not Stated", 3)
+people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Other", 4)
+
+people_demo_changed$party_sex <- as.numeric(people_demo_changed$party_sex)
+
+#Male - 1
+#Female - 2
+#Not stated - 3
+#Other - 4
+
+
+#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Driver", 1)
+#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Bicyclist", 2)
+#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Pedestrian", 3)
+#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Other", 5)
+#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Parked Vehicle", 4)
+
+#people_demo_changed$party_type <- as.numeric(people_demo_changed$party_type)
+
+#Driver - 1
+#Bicyclist - 2
+#Pedestrian - 3
+#Parked Vehicle - 4
+#Other - 5
+
+
+
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Impairment Unknown", 1)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Not Under Influence", 2)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Under Influence", 3)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Not Been Drinking", 4)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety %in% c("Impairment Not Known", "Not Applicable", "Not Stated"), 5)
+
+people_demo_changed$party_sobriety <- as.numeric(people_demo_changed$party_sobriety)
+
+
+#Had Been Drinking, Impairment Unknown - 1
+#Had Been Drinking, Not Under Influence	- 2
+#Had Been Drinking, Under Influence	- 3
+#Had Not Been Drinking - 4
+#Impairment Not Known, Not Applicable, Not Stated	- 5
+
+
+
+
+people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Asian", 1)
+people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Black", 2)
+people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Hispanic", 3)
+people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "White", 4)
+people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race %in% c("Other", "Not Stated"), 5)
+
+people_demo_changed$race <- as.numeric(people_demo_changed$race)
+
+#Asian - 1
+#Black - 2
+#Hispanic - 3
+#White - 4
+#Other, Not Stated - 5
+
+
+people_demo_changed$at_fault <- replace(people_demo_changed$at_fault, people_demo_changed$at_fault == "No", 0)
+people_demo_changed$at_fault <- replace(people_demo_changed$at_fault, people_demo_changed$at_fault == "Yes", 1)
+
+people_demo_changed$at_fault <- as.numeric(people_demo_changed$at_fault)
+
+
+#Yes - 1
+#No - 0
+
+#is.numeric(people_demo_changed$at_fault[0])
+
+#people_demo_changed$at_fault[c("Yes", "No")] <- c(0, 1)
+
+
+
+
+
+
+people_demo
+
+people_demo_changed
+
+
 
 
 

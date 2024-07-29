@@ -1,0 +1,55 @@
+```{r}
+library(readr)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(caTools)
+library(downloader)
+library(FNN)
+library(readxl)
+```
+```{r}
+traffic <- read.csv("Project_Code/Data/data_traffic.csv")
+
+traffic
+
+acc_info <- select(traffic, c(unique_id, case_id_pkey, tb_latitude, tb_longitude, collision_time, day_of_week, time_cat, reporting_district, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, mviw, ped_action, road_surface, lighting, intersection, vz_pcf_description, number_killed, number_injured, at_fault, dph_col_grp_description))
+
+
+
+people_demographics <- people_demo_changed
+
+people_demographics
+
+
+
+
+```
+
+
+```{r}
+#Modeling based on demographics
+
+set.seed(50)
+
+split_dem <- sample.split(people_demographics$at_fault, SplitRatio = 0.8)
+train_dem <- subset(people_demographics, split_dem == T)
+test_dem <- subset(people_demographics, split_dem == F)
+
+#train_dem
+#test_dem
+
+
+dem_model <- knn(train = train_dem, test = test_dem, cl = train_dem$at_fault, k = 5)
+
+
+confusion_matrix <- table(test_dem$at_fault, dem_model)
+
+confusion_matrix
+
+accuracy <- sum(diag(confusion_matrix))/sum(confusion_matrix)
+
+accuracy
+
+```
+
