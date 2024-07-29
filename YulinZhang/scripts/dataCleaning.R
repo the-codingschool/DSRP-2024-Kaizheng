@@ -1,12 +1,9 @@
-install.packages(c("sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools"))
-library("sf")
-library("tidyr")
-library("dplyr")
-library("lubridate")
-library("ggplot2")
-library("scales")
-library("caTools")
-
+libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools")
+for (lib in libs) {
+  print(lib)
+  if (!require(lib)) install.packages(lib)
+  library(lib)
+}
 
 ## Get the dataset
 prefix <- "Project_Code/Data/"
@@ -101,16 +98,34 @@ ggplot(sam_hrs, aes(x = hrs, y = hurt)) +
 ## What ML model to use? How to graph?
 
 ## graphs for different lighting conditions
+
+ols <- lm(total~, data=popu)
+
+#create plot of y-values vs. standardized residuals
+plot(df$y, rstandard(ols), ylab='Standardized Residuals', xlab='y') 
+abline(h=0)
+
 popu <- data |>
   drop_na(party_age, number_injured, number_killed) |>
-  filter(party_age > 0) |>
+  filter(party_age > 0, party_type == "Driver") |>
   mutate(total_cas = number_injured + number_killed)
 
+nrow(popu)
 
-act_cas_vs_age_canvas <- ggplot()
-pred_cas_vs_age_canvas <- ggplot()
+run_lr(popu, "all")
 
-run_lr = function(sample, lighting) {
+## Extremely few data points below 15 years old and 90 years old
+ggplot(popu, aes(x = party_age)) +
+  geom_histogram(binwidth = 12, boundary = 0) +
+  scale_x_continuous(breaks = seq(0, 108, 12)) +
+  geom_text(
+    stat = "bin", aes(label = after_stat(count)),
+    vjust = -1, breaks = seq(0, 108, 12)
+  )
+
+
+
+run_lr = function(sample, lighting, deg = 1) {
   sam_age_cas <- sample |>
     # subset(q1-9e9*(q3-q1) <= total_cas & total_cas <= q3+9e9*(q3-q1)) |>
     group_by(party_age) |>
@@ -127,15 +142,16 @@ run_lr = function(sample, lighting) {
   train_data <- subset(sam_age_cas, split == T)
   test_data <- subset(sam_age_cas, split == F)
     
-  lr_model <- lm(mean_cas ~ poly(party_age, 2), data = train_data)
+  lr_model <- rlm(mean_cas ~ poly(party_age, deg), data = train_data)
   pred <- predict(lr_model, newdata = test_data)
 
   print(ggplot(sam_age_cas, aes(x = party_age, y = mean_cas)) +
           geom_point() +
-          geom_smooth(lm =) +
+          geom_smooth(method = "lm", formula = y ~ poly(party_age, deg)) +
           labs(title = paste("Average Casualty vs. Age with", lighting),
                x = "Party Age",
                y = "Avg. Casualty"))
+
   
   # ggplot(test_data, aes(x = mean_cas, y = pred)) +
   #   geom_point() +
@@ -144,6 +160,7 @@ run_lr = function(sample, lighting) {
   #        x = "Actual Avg. Casualty",
   #        y = "Predicted Avg. Casualty")
 }
+
 
 for (lgh in unique(popu$lighting)) {
   sample <- subset(popu, lighting == lgh)
