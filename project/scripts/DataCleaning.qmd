@@ -1,0 +1,138 @@
+Load libraries
+
+```{r}
+install.packages("janitor")
+install.packages("gt")
+library(janitor)
+library(dplyr)
+library(ggplot2)
+library(gt)
+```
+
+Reading the data
+
+```{r}
+traffic_data <- read.csv("data_traffic.csv")
+nrow(traffic_data)
+```
+
+Remove NA values and subset data
+
+```{r}
+#remove NA values and subset data
+cleaned_data <- traffic_data |>
+  select("party_age", "at_fault") |>
+  na.omit()
+#plot data
+cleaned_data |>
+  filter(at_fault == "Yes") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) +
+  labs(title = "Distribution of Ages for At-Fault Parties",
+       x = "Age of Party",
+       y = "Count") +
+  xlim(0,100) +
+  ylim(0, 1600)
+cleaned_data |>
+  filter(at_fault == "No") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for Non-Fault Parties",
+       x = "Age of Party",
+       y = "Count") + 
+  xlim(0,100) +
+  ylim(0,1600)
+```
+
+Find factors that could cause these higher crash rates from mid aged people.
+
+```{r}
+
+sobriety_data <- traffic_data |>
+  filter(party_age  > 0) |>
+  select("party_age", "party_sobriety") |>
+  na.omit()
+table(sobriety_data$party_sobriety)
+sobriety_data |>
+  filter(party_sobriety == "Had Been Drinking, Under Influence") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for Under the Influence Drinking crashes",
+       x = "Sobriety",
+       y = "Count") + 
+  xlim(0,100) + 
+  ylim(0, 70)
+sobriety_data |>
+  filter(party_sobriety == "Had Not Been Drinking") |>
+  ggplot(aes(x = party_age)) + geom_histogram(fill = "grey", boundary = 0) + labs(title = "Distribution of Ages for No Drinking crashes",
+       x = "Sobriety",
+       y = "Count")
+```
+
+Testing for relationships between party_sobriety and collision severity
+
+```{r}
+inattention_data <- traffic_data |>
+  select("party_sobriety", "collision_severity") |>
+  na.omit()
+inattention_data |>
+  ggplot(aes(x = collision_severity, fill = party_sobriety)) + geom_bar(position = "dodge") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+#Include only the rows that we deem important
+inattention_data |>
+  filter(party_sobriety %in% c("Had Been Drinking, Under Influence", "Had Been Drinking, Not Under Influence")) |>
+  ggplot(aes(x = collision_severity, fill = party_sobriety)) + geom_bar(position = "dodge") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Effect of airbag on collision severity
+
+```{r}
+safety_data <- traffic_data |>
+  select("collision_severity", "party_safety_equip_1") |>
+  na.omit()
+graph_collision_severity <- function(severity)
+  safety_data |>
+  filter(collision_severity %in% severity) |>
+  filter(party_safety_equip_1 %in% c("Air Bag Deployed", "Air Bag Not Deployed")) |>
+  ggplot(aes(x = collision_severity, fill = party_safety_equip_1)) + geom_bar(position = "dodge") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+graph_collision_severity(severity = "Fatal")
+graph_collision_severity(severity = "Injury (Complaint of Pain)")
+graph_collision_severity(severity = "Injury (Other Visible)")
+graph_collision_severity(severity = "Injury (Severe)")
+```
+
+Weather, location, car, driver,
+
+Effect of weather on collision severity
+
+```{r}
+weather_data <- traffic_data |>
+  select("weather_1", "collision_severity") |>
+  filter(collision_severity != "Medical") |>
+  filter(weather_1 %in% c("Clear", "Cloudy", "Fog", "Raining")) |>
+  na.omit()
+weather_data |>
+  filter(collision_severity != "Medical") |>
+  ggplot(aes(x = collision_severity, fill = weather_1)) + geom_bar()
+weather_data |>
+  filter(collision_severity != "Medical") |>
+  filter(weather_1 != "Clear") |>
+  ggplot(aes(x = collision_severity, fill = weather_1)) + geom_bar()
+```
+
+Effect of time on collision severity
+
+```{r}
+time_data <- traffic_data |>
+  select("time_cat", "collision_severity") |>
+  filter(collision_severity != "Medical") |>
+  filter(time_cat != "") |>
+  na.omit()
+time_order <- c("6:01 am to 10:00 am", "10:01 am to 2:00 pm", "2:01 pm to 6:00 pm", "6:01 pm to 10:00 pm", "10:01 pm to 2:00 am", "2:01 am to 6:00 am")
+time_data$time_cat <- factor(time_data$time_cat, levels = time_order)
+time_data <- time_data[order(time_data$time_cat), ]
+table(time_data)
+graph_time_data <- function(severity)
+  time_data |>
+  filter(collision_severity %in% severity) |>
+  ggplot(aes(x = collision_severity, fill = time_cat)) + geom_bar(position = "dodge") + 
+  labs(title = "Effect of time on collision severities") + guides(fill=guide_legend(title="Time"))
+graph_time_data("Injury (Complaint of Pain)")
+graph_time_data("Injury (Other Visible)")
+graph_time_data("Injury (Severe)")
+graph_time_data("Fatal")
+```
