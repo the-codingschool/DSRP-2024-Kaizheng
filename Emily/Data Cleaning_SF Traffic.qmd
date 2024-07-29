@@ -1,0 +1,112 @@
+---
+title: "Data Cleaning_SF Traffic"
+format: html
+editor: visual
+---
+
+# Part 1: Data Cleaning-SF Traffic
+
+## Preparation
+
+### Import All Necessary Packages
+
+```{r}
+library(janitor)
+library(tidyr) 
+library(tidyverse) 
+library(dplyr) 
+library(ggplot2) 
+library(readr)
+```
+
+### Reading in Data
+
+```{r}
+#Define url of data
+url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
+
+#alternate url: url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
+
+# Load the dataset into a dataframe called traffic_d8ata
+traffic_data <- read_csv(url)
+print(traffic_data)
+```
+
+### Overview of Dataset
+
+```{r}
+# Preview the first few rows
+head(traffic_data)
+#Overview of dataframe
+str(traffic_data)
+#Summary of stats based on column
+summary(traffic_data)
+#Number of rows [31995]
+nrow(traffic_data)
+#Number of columns [86]
+ncol(traffic_data) 
+#Names of columns
+names(traffic_data)
+```
+
+#### Findings:
+
+-   Number of rows is 31995
+
+-   Number of columns is 86
+
+## Cleaning
+
+### Copying dataset into new name
+
+```{r}
+#Copying dataset into clean_traffic_data
+clean_traffic_data <- traffic_data
+```
+
+### Replacing placeholder values such with NA
+
+We can clearly see some columns have 'Not Stated' in them from printing the dataset: (direction, weather_1, weather_2, type_of_collision, mviw, ped_action, road_surface, road_cond_1, road_cond_2, party_sex, party_sobriety, party_drug_physical, party_safety_equip_1, party_safety_equip_2, finan_respons, sp_info_1, sp_info_2, sp_info_3, oaf_viol_cat, oaf_viol_section, oaf_violation_code, oaf_violation_suffix, oaf_1, oaf_2, move_pre_acc, race, inattention, vehicle_autonomous.
+
+Some other columns have 'Unknown' in them: vz_pcf_code, vz_pcf_group, vz_pcf_description, party_safety_equip_1, party_safety_equip_2
+
+Other types: party_sobriety (Impairment Not Known) and party_safety_equip_1 (Not required)
+
+```{r}
+#Replacing string 'Not Stated' with NA
+clean_traffic_data[clean_traffic_data == 'Not Stated'] <- NA
+#Replacing string 'Not Stated' with Unknown
+clean_traffic_data[clean_traffic_data == 'Unknown'] <- NA
+#Replacing string 'Impairment Not Known' with NA 
+clean_traffic_data[clean_traffic_data == 'Impairment Not Known'] <- NA
+
+
+#Counting number of NAs in each column
+na_counts_base <- colSums(is.na(clean_traffic_data))
+print(na_counts_base)
+```
+
+### Other cleaning processes (Duplicates, Full NA rows/cols)
+
+```{r}
+#Finding duplicate records (none found in all columns)
+dupes <- get_dupes(clean_traffic_data)
+
+#Removing fully NA rows or cols in dataset (there are none found here)
+clean_traffic_data <- remove_empty(clean_traffic_data)
+ncol(clean_traffic_data) #Checking if there are less columns now
+nrow(clean_traffic_data) #Checking if there are less rows now
+
+#vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'
+clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
+clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
+
+#move_pre_acc column has both 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane'
+clean_traffic_data[clean_traffic_data == 'Crossed Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
+clean_traffic_data[clean_traffic_data == 'Crossing Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
+
+```
+
+```{r}
+write.csv(clean_traffic_data,'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv', row.names = FALSE)
+```
