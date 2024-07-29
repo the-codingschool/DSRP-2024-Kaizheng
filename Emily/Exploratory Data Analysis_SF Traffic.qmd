@@ -12,7 +12,6 @@ editor: visual
 
 ```{r}
 library(janitor)
-library(titanic)
 library(tidyr) 
 library(tidyverse) 
 library(dplyr) 
@@ -26,7 +25,7 @@ library(readr)
 #Define url of data
 url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'
 
-# Load the dataset into a dataframe called traffic_d8ata
+# Load the dataset into a dataframe called traffic_data
 clean_traffic_data <- read_csv(url)
 print(clean_traffic_data)
 ```
@@ -49,8 +48,6 @@ print(clean_traffic_data)
 
 **vz_pcf_description (159+NA) \[Description of vehicle code violated\]**
 
-**oaf_viol_section (456+NA)** **\[Other associated factor section\]**
-
 **number_killed (4)**: 0, 1, 2, 4
 
 **number_injured (10)**: 1, 5, 0, 3, 2, 7, 4, 6, 10, 8
@@ -63,8 +60,29 @@ unique(clean_traffic_data$type_of_collision)
 unique(clean_traffic_data$mviw) 
 unique(clean_traffic_data$ped_action) 
 unique(clean_traffic_data$vz_pcf_code) 
-unique(clean_traffic_data$vz_pcf_description) 
-unique(clean_traffic_data$oaf_viol_section) 
+unique(clean_traffic_data$vz_pcf_description)
 unique(clean_traffic_data$number_killed) 
 unique(clean_traffic_data$number_injured) 
+```
+
+## Visualization
+
+### type_of_collision
+
+```{r}
+#bar graph of clean_traffic_data
+ggplot(data = clean_traffic_data, aes(x = type_of_collision, fill=type_of_collision)) + 
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+```
+
+### move_pre_acc
+
+```{r}
+#bar graph of move_pre_acc
+ggplot(data = clean_traffic_data, aes(x = move_pre_acc, fill=move_pre_acc)) + 
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
 ```

@@ -12,7 +12,6 @@ editor: visual
 
 ```{r}
 library(janitor)
-library(titanic)
 library(tidyr) 
 library(tidyverse) 
 library(dplyr) 
@@ -101,6 +100,11 @@ nrow(clean_traffic_data) #Checking if there are less rows now
 #vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'
 clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
 clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
+
+#move_pre_acc column has both 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane'
+clean_traffic_data[clean_traffic_data == 'Crossed Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
+clean_traffic_data[clean_traffic_data == 'Crossing Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
+
 ```
 
 ```{r}
