@@ -1,12 +1,30 @@
 Load libraries
 
 ```{r}
-install.packages("janitor")
-install.packages("gt")
+install_if_missing <- function(package) {
+  if (!require(package, character.only = TRUE)) {
+    install.packages(package, dependencies = TRUE)
+    library(package, character.only = TRUE)
+  }
+}
+install_if_missing("janitor")
+install_if_missing("gt")
+install_if_missing("dplyr")
+install_if_missing("caret")
+install_if_missing("mltools")
+install_if_missing("data.table")
+install_if_missing("caTools")
+install_if_missing("readr")
 library(janitor)
 library(dplyr)
 library(ggplot2)
 library(gt)
+library(dplyr)
+library(caret)
+library(mltools)
+library(data.table)
+library(caTools)
+library(readr)
 ```
 
 Reading the data
@@ -111,7 +129,7 @@ weather_data |>
 weather_data |>
   filter(collision_severity != "Medical") |>
   filter(weather_1 != "Clear") |>
-  ggplot(aes(x = collision_severity, fill = weather_1)) + geom_bar()
+  ggplot(aes(x = collision_severity, fill = weather_1)) + geom_bar(position = "dodge")
 ```
 
 Effect of time on collision severity
@@ -125,14 +143,69 @@ time_data <- traffic_data |>
 time_order <- c("6:01 am to 10:00 am", "10:01 am to 2:00 pm", "2:01 pm to 6:00 pm", "6:01 pm to 10:00 pm", "10:01 pm to 2:00 am", "2:01 am to 6:00 am")
 time_data$time_cat <- factor(time_data$time_cat, levels = time_order)
 time_data <- time_data[order(time_data$time_cat), ]
-table(time_data)
-graph_time_data <- function(severity)
-  time_data |>
-  filter(collision_severity %in% severity) |>
-  ggplot(aes(x = collision_severity, fill = time_cat)) + geom_bar(position = "dodge") + 
-  labs(title = "Effect of time on collision severities") + guides(fill=guide_legend(title="Time"))
-graph_time_data("Injury (Complaint of Pain)")
-graph_time_data("Injury (Other Visible)")
-graph_time_data("Injury (Severe)")
-graph_time_data("Fatal")
+time_data |>
+  filter(collision_severity %in% c("Fatal", "Injury (Complaint of Pain)")) |>
+  ggplot(aes(x = collision_severity, fill = time_cat)) + geom_bar(position = "dodge") +
+  labs(title = "Effect of time on collision severities", x = "Collision Severity") + guides(fill=guide_legend(title="Time")) + facet_wrap(~ collision_severity, scales = "free")
+```
+
+Statistical tests
+
+```{r}
+#mutate data to ensure that expected values are above 5
+chisq_time_data <- time_data %>%
+  mutate(new_time_cat = case_when(
+    time_cat %in% c('10:01 pm to 2:00 am', '2:01 am to 6:00 am') ~ 'Night (10 pm to 6 am)',
+    time_cat %in% c('6:01 am to 10:00 am', '10:01 am to 2:00 pm') ~ 'Morning (6 am to 2 pm)',
+    TRUE ~ 'Afternoon/Evening (2 pm to 10pm'
+  ))
+head(chisq_time_data)
+# Create a contingency table
+contingency_table <- table(chisq_time_data$collision_severity, chisq_time_data$new_time_cat)
+
+# Print the contingency table
+head(contingency_table)
+
+# Run the chi-squared test
+chi_squared_test <- chisq.test(contingency_table)
+
+# Print the test results
+print(chi_squared_test)
+
+# Check the expected counts to ensure they are large enough for the chi-squared test to be valid
+print(chi_squared_test$expected)
+
+```
+
+replotting data with new categories
+
+```{r}
+chisq_time_data |>
+  filter(collision_severity %in% c("Fatal", "Injury (Complaint of Pain)")) |>
+  ggplot(aes(x = collision_severity, fill = new_time_cat)) + geom_bar(position = "dodge") +
+  labs(title = "Effect of time on collision severities", x = "Collision Severity") + guides(fill=guide_legend(title="Time")) + facet_wrap(~ collision_severity, scales = "free")
+```
+
+Polynomial regression
+
+```{r}
+MLdata <- traffic_data |>
+  select("collision_time", "party_age", "number_injured", "collision_severity") |>
+  filter(collision_severity != "Medical") |>
+  na.omit()
+unique(MLdata$collision_severity)
+MLdata |>
+  mutate(new_col_sever = case_when(
+    collision_severity %in% c("Injury (Complaint of Pain)", "Injury (Other Visible)") ~ 1,
+    collision_severity == "Injury (Severe)" ~ 2,
+    collision_severity == "Fatal" ~ 3)
+)
+head(MLdata, n = 100)
+# Set seed for reproducibility
+set.seed(42)
+
+# Split the data into training (80%) and test (20%) sets using caTools
+split <- sample.split(MLdata$Y, SplitRatio = 0.8)
+train_data <- subset(data, split == TRUE)
+test_data <- subset(data, split == FALSE)
 ```
