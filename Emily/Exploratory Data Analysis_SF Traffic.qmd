@@ -25,7 +25,8 @@ library(readr)
 #Define url of data 
 url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'  
 # Load the dataset into a dataframe called traffic_data 
-clean_traffic_data <- read_csv(url) print(clean_traffic_data)
+clean_traffic_data <- read_csv(url) 
+print(clean_traffic_data)
 ```
 
 ## Basic Exploration
@@ -73,7 +74,9 @@ unique(clean_traffic_data$number_injured)
 #bar graph of occurences of type_of_collision 
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision)), aes(x = type_of_collision, fill=type_of_collision)) +
   geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Type of Collision',y='Number of Car Accidents', title='Type of Collision Compared to the Number of Car Accidents') +
+  scale_fill_discrete(name = "Legend")
 ```
 
 **Type_of_collision_merge:**
@@ -89,10 +92,49 @@ clean_traffic_data$type_of_collision_merge[clean_traffic_data$type_of_collision_
 ```
 
 ```{r}
-#bar graph of occurences of type_of_collision 
+#bar graph of occurences of type_of_collision_merge 
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, fill=type_of_collision_merge)) +
   geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Type of Collision',y='Number of Car Accidents', title='Type of Collision Compared to the Number of Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+```
+
+```{r}
+#bar graph of occurences of type_of_collision_merge filled by collision_severity
+ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, fill=collision_severity)) +
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Type of Collision',y='Collision Severity by Count', title='Effect of Type of Collision on Collision Severity') +
+  scale_fill_discrete(name = "Legend")
+```
+
+```{r}
+#bar graph of average number_casualty based on type_of_collision_merge 
+ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_casualty, fill=type_of_collision_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Type of Collision',y='Average Number of Casualties', title='Effect of Movement on Number of Casualties in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+
+```
+
+```{r}
+#bar graph of average number_injury based on type_of_collision_merge 
+ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_injured, fill=type_of_collision_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Type of Collision',y='Average Number of Casualties', title='Effect of Movement on Number of Casualties in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+```
+
+```{r}
+#bar graph of average number_injury based on move_pre_acc 
+ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_killed, fill=type_of_collision_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Type of Collision',y='Average Number of Casualties', title='Effect of Movement on Number of Casualties in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
 ```
 
 ### move_pre_acc
@@ -103,7 +145,9 @@ ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x
 #bar graph of occurences of move_pre_acc 
 ggplot(data = clean_traffic_data, aes(x = move_pre_acc, fill=move_pre_acc)) +
   geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x='Movement Prior to Accident',y='Number of Car Accidents', title='Movement Compared to the Number of Car Accidents') +
+  scale_fill_discrete(name = "Legend")
 ```
 
 **Type_of_collision_merge:**
@@ -112,42 +156,88 @@ ggplot(data = clean_traffic_data, aes(x = move_pre_acc, fill=move_pre_acc)) +
 unique(clean_traffic_data$move_pre_acc) 
 ```
 
--   Merge 'Entering Traffic', 'Merging' and 'Changing Lanes' Into 'Merging/Changing Lanes'
-
--   Merge 'Other Unsaffe Turning', 'Ran Off Road' into 'Other'
-
--   Merge 'Parked' and 'Stopped' into 'Stopped/Parked'
-
--   Merge 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane' + 'Traveling Wrong Way' + 'Other Unsafe Turning' + 'Ran Off Road' into 'Unsafe Behavior'
-
 ```{r}
 #Duplicate type_of_collision as type_of_collision_merge
 clean_traffic_data$move_pre_acc_merge=clean_traffic_data$move_pre_acc   
 
-#Merge 'Entering Traffic' and 'Changing Lanes' Into 'Merging/Changing Lanes' 
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Entering Traffic'] <- 'Merging/Changing Lanes'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Changing Lanes'] <- 'Merging/Changing Lanes'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Merging'] <- 'Merging/Changing Lanes'  
+#Merge 'Entering Traffic' + 'Changing Lanes' Into 'Merging/Changing Lanes' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Entering Traffic'] <- 'Merging/Passing/Changing Lanes'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Changing Lanes'] <- 'Merging/Passing/Changing Lanes'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Merging'] <- 'Merging/Passing/Changing Lanes' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Passing Other Vehicle'] <- 'Merging/Passing/Changing Lanes' 
 
-#Merge 'Parked' and 'Stopped' into 'Stopped/Parked' 
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Parked'] <- 'Stopped/Parked' 
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Stopped'] <- 'Stopped/Parked'  
+#Merge 'Parked' + 'Stopped' + 'Slowing/Stopping' into 'Stopped/Parked' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Parked'] <- 'Slowing/Stopped' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Stopped'] <- 'Slowing/Stopped'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Slowing/Stopping'] <- 'Slowing/Stopped'
 
-#Merge 'Other Unsafe Turning' and 'Ran Off Road' into 'Unsafe Behavior'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Ran Off Road'] <- 'Unsafe Behavior'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Other Unsafe Turning'] <- 'Unsafe Behavior'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossed Into Opposing Lane'] <- 'Unsafe Behavior'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossing Into Opposing Lane'] <- 'Unsafe Behavior'
-clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Traveling Wrong Way'] <- 'Unsafe Behavior' 
+
+#Merge 'Other Unsafe Turning' + 'Ran Off Road' + 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane' + 'Traveling Wrong Way' into 'Unsafe Behavior'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Ran Off Road'] <- 'Other'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Other Unsafe Turning'] <- 'Other'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossed Into Opposing Lane'] <- 'Other'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Crossing Into Opposing Lane'] <- 'Other'
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Traveling Wrong Way'] <- 'Other' 
+
+
+#Merge 'Parked' + 'Stopped' into 'Stopped/Parked' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Parking Maneuver'] <- 'Parking/Backing' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Backing'] <- 'Parking/Backing'  
+
+#Merge 'Parked'+ 'Stopped' into 'Stopped/Parked' 
+clean_traffic_data$move_pre_acc_merge[clean_traffic_data$move_pre_acc_merge == 'Making U Turn'] <- 'Other' 
+
+
 ```
 
 ```{r}
-#Duplicate type_of_collision as type_of_collision_merge 
-clean_traffic_data$move_pre_acc_merge=clean_traffic_data$move_pre_acc   
-#bar graph of occurences of type_of_collision 
+#bar graph of occurences of move_pre_acc
 ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=move_pre_acc_merge)) +
   geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Movement Prior to Accident',y='Number of Car Accidents', title='Movement Compared to the Number of Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+```
+
+```{r}
+#bar graph of occurences of move_pre_acc filled by collision_severity
+ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=collision_severity)) +
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Collision Severity by Count', title='Effect of Movement on Collision Severity') +
+  theme(plot.margin=unit(c(2,1,1,1), 'cm')) +
+  scale_fill_discrete(name = "Legend")
+
+```
+
+```{r}
+#bar graph of average number_casualty based on move_pre_acc 
+ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_casualty, fill=move_pre_acc_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  labs(x='Movement Prior to Accident',y='Average Number of Casualties', title='Effect of Movement  on Number of Casualties in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+
+```
+
+```{r}
+#bar graph of average number_killed based on move_pree_acc 
+ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_injured, fill=move_pre_acc_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Average Number of Injuries', title='Effect of Movement on Number of Injuries in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+
+```
+
+```{r}
+#bar graph of average number_killed based on move_pree_acc 
+ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_killed, fill=move_pre_acc_merge)) +
+  stat_summary(fun.y="mean", geom="bar") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Average Number of Deaths', title='Effect of Movement  on Number of Deaths in Car Accidents') +
+  scale_fill_discrete(name = "Legend")
+
 ```
 
 ## Saving Mechanism

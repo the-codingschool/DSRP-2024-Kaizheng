@@ -23,9 +23,9 @@ library(readr)
 
 ```{r}
 #Define url of data
-url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
+url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
 
-#alternate url: url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
+#alternate url: url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
 
 # Load the dataset into a dataframe called traffic_d8ata
 traffic_data <- read_csv(url)
@@ -100,6 +100,10 @@ nrow(clean_traffic_data) #Checking if there are less rows now
 #vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'
 clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
 clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
+```
+
+```{r}
+clean_traffic_data$number_casualty <- clean_traffic_data$number_injured + clean_traffic_data$number_killed
 ```
 
 ```{r}
