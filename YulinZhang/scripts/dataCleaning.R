@@ -1,9 +1,9 @@
 libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools")
 for (lib in libs) {
-  print(lib)
-  if (!require(lib)) install.packages(lib)
-  library(lib)
+  if (!require(lib, character.only = TRUE)) install.packages(lib, character.only = TRUE)
+  library(lib, character.only = TRUE)
 }
+library(stringr)
 
 ## Get the dataset
 prefix <- "Project_Code/Data/"
@@ -94,25 +94,11 @@ ggplot(sam_hrs, aes(x = hrs, y = hurt)) +
 ## RQ2: Predict road condition given location (longitude + latitude)
 ## KNN?
 
-## RQ3: Estimate collision_severity with vehicle_autonomous, lighting, and stwd_vehicle_type
-## What ML model to use? How to graph?
-
-## graphs for different lighting conditions
-
-ols <- lm(total~, data=popu)
-
-#create plot of y-values vs. standardized residuals
-plot(df$y, rstandard(ols), ylab='Standardized Residuals', xlab='y') 
-abline(h=0)
 
 popu <- data |>
   drop_na(party_age, number_injured, number_killed) |>
   filter(party_age > 0, party_type == "Driver") |>
   mutate(total_cas = number_injured + number_killed)
-
-nrow(popu)
-
-run_lr(popu, "all")
 
 ## Extremely few data points below 15 years old and 90 years old
 ggplot(popu, aes(x = party_age)) +
@@ -123,52 +109,52 @@ ggplot(popu, aes(x = party_age)) +
     vjust = -1, breaks = seq(0, 108, 12)
   )
 
+## Test if lighting conditions differ by chance with log-linear test
 
 
-run_lr = function(sample, lighting, deg = 1) {
-  sam_age_cas <- sample |>
-    # subset(q1-9e9*(q3-q1) <= total_cas & total_cas <= q3+9e9*(q3-q1)) |>
+## Split the data into dark (merge them) and light condition
+table(popu$lighting)
+dark_data <- filter(popu, str_detect(lighting, "Dark|Dusk"))
+light_data <- filter(popu, lighting == "Daylight")
+
+run_rlr(dark_data)
+run_rlr(light_data)
+
+
+run_rlr = function(data) {
+  data <- data |>
     group_by(party_age) |>
+    ## filter(party_age > 15, party_age < 75) |>
     summarize(mean_cas = mean(number_injured + number_killed))
   
-  print(ggplot(sam_age_cas, aes(x = party_age, y = mean_cas)) +
-    geom_point() +
-    geom_smooth() +
-    labs(title = paste("Average Casualty vs. Age with", lighting),
-         x = "Party Age",
-         y = "Avg. Casualty"))
-  
-  split <- sample.split(sam_age_cas$mean_cas, SplitRatio = 0.8)
-  train_data <- subset(sam_age_cas, split == T)
-  test_data <- subset(sam_age_cas, split == F)
+  split <- sample.split(data$mean_cas, SplitRatio = 0.8)
+  train_data <- subset(data, split == T)
+  test_data <- subset(data, split == F)
     
-  lr_model <- rlm(mean_cas ~ poly(party_age, deg), data = train_data)
-  pred <- predict(lr_model, newdata = test_data)
+  rlr_model <<- rlm(mean_cas ~ party_age, data = train_data)
+  pred <- predict(rlr_model, newdata = test_data)
 
-  print(ggplot(sam_age_cas, aes(x = party_age, y = mean_cas)) +
+  print(ggplot(data, aes(x = party_age, y = mean_cas)) +
           geom_point() +
-          geom_smooth(method = "lm", formula = y ~ poly(party_age, deg)) +
-          labs(title = paste("Average Casualty vs. Age with", lighting),
+          geom_smooth(method = MASS::rlm) +
+          labs(title = paste("Predicted Avg. Casualty vs. Party Age"),
                x = "Party Age",
-               y = "Avg. Casualty"))
-
+               y = "Predicted Avg. Casualty"))
   
-  # ggplot(test_data, aes(x = mean_cas, y = pred)) +
-  #   geom_point() +
-  #   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-  #   labs(title = paste("Predicted vs. Actual Average Casualty with", lighting),
-  #        x = "Actual Avg. Casualty",
-  #        y = "Predicted Avg. Casualty")
+  # Print the performance of model
+  mse <- mean((test_data$mean_cas - pred) ^ 2)
+  mae <- mean(abs(test_data$mean_cas - pred))
+
+  Y <- test_data$mean_cas
+  r_sq <- 1 - sum((test_data$mean_cas - pred)^2) / sum((Y - mean(Y))^2)
+  
+  cat("Mean Squared Error:", mse,
+      "\nMean Absolute Error:", mae,
+      "\nR-Squared:", r_sq)
 }
 
 
-for (lgh in unique(popu$lighting)) {
-  sample <- subset(popu, lighting == lgh)
-  run_lr(sample, lgh)
-}
 
 ## https://stackoverflow.com/questions/65137690/plotting-polynomial-regression-curves-in-r
 ## too few data points!!
-table(popu$lighting)
 
-## mean square error, R score
