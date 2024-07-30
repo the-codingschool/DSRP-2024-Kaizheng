@@ -190,22 +190,51 @@ Polynomial regression
 
 ```{r}
 MLdata <- traffic_data |>
-  select("collision_time", "party_age", "number_injured", "collision_severity") |>
+  select("time_cat", "party_age", "number_injured", "collision_severity") |>
   filter(collision_severity != "Medical") |>
   na.omit()
-unique(MLdata$collision_severity)
-MLdata |>
+MLdata <-
+  MLdata |>
   mutate(new_col_sever = case_when(
     collision_severity %in% c("Injury (Complaint of Pain)", "Injury (Other Visible)") ~ 1,
     collision_severity == "Injury (Severe)" ~ 2,
     collision_severity == "Fatal" ~ 3)
 )
-head(MLdata, n = 100)
 # Set seed for reproducibility
 set.seed(42)
-
 # Split the data into training (80%) and test (20%) sets using caTools
-split <- sample.split(MLdata$Y, SplitRatio = 0.8)
-train_data <- subset(data, split == TRUE)
-test_data <- subset(data, split == FALSE)
+split <- sample.split(MLdata$new_col_sever, SplitRatio = 0.8)
+train_data <- subset(MLdata, split == TRUE) |>
+  na.omit()
+test_data <- subset(MLdata, split == FALSE) |>
+  na.omit()
+```
+
+Fit model on training data and predict
+
+```{r}
+lr_model <- lm(new_col_sever ~ time_cat + party_age + number_injured, data = train_data)
+#predict
+test_data$pred <- predict(lr_model, newdata = test_data)
+```
+
+Visualize results
+
+```{r}
+ggplot(test_data, aes(x = new_col_sever, y = pred)) +
+  geom_point() +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(title = "Real vs Predicted Values",
+       x = "True collision severity",
+       y = "Predicted collision severity")
+
+```
+
+Testing accuracy
+
+```{r}
+mse <-  mean((test_data$new_col_sever - pred)^2)
+r_squared <- summary(lr_model)$r.squared
+mse
+r_squared
 ```
