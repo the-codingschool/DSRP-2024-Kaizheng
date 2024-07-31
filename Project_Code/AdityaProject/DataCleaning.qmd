@@ -148,9 +148,9 @@ count(acc_on_imp, distance == 0)
 ```
 
 ```{r}
-#people_demo <- select(traffic, c(party_type, at_fault, party_sex, party_age, party_sobriety, race))
+people_demo <- select(traffic, c(party_type, at_fault, party_sex, party_age, party_sobriety, race))
 
-people_demo <- select(traffic, c(at_fault, party_sex, party_age, party_sobriety, race))
+#people_demo <- select(traffic, c(at_fault, party_sex, party_age, party_sobriety, race))
 
 people_demo <- filter(people_demo, !is.na(party_age))
 
@@ -165,14 +165,26 @@ people_demo <- filter(people_demo, !is.na(party_age))
 #count(people_demo, race)
 
 people_demo_changed <- people_demo
+people_demo_changed
 
 
-people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Male", 1)
-people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Female", 2)
-people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Not Stated", 3)
-people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Other", 4)
+#people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Male", 1)
+#people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Female", 2)
+#people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Not Stated", 3)
+#people_demo_changed$party_sex <- replace(people_demo_changed$party_sex, people_demo_changed$party_sex == "Other", 4)
 
-people_demo_changed$party_sex <- as.numeric(people_demo_changed$party_sex)
+#people_demo_changed$party_sex <- as.numeric(people_demo_changed$party_sex)
+
+people_demo_changed <- people_demo_changed %>%
+  
+  mutate(Male = ifelse(party_sex == 'Male', 1, 0),
+         Female = ifelse(party_sex == 'Female', 1, 0),
+         Not_Stated_Gender = ifelse(party_sex == 'Not Stated', 1, 0),
+         Other_Gender = ifelse(party_sex == 'Other', 1, 0))%>%
+  
+  select(-party_sex)
+
+people_demo_changed
 
 #Male - 1
 #Female - 2
@@ -180,13 +192,13 @@ people_demo_changed$party_sex <- as.numeric(people_demo_changed$party_sex)
 #Other - 4
 
 
-#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Driver", 1)
-#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Bicyclist", 2)
-#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Pedestrian", 3)
-#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Other", 5)
-#people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Parked Vehicle", 4)
+people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Driver", 1)
+people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Bicyclist", 2)
+people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Pedestrian", 3)
+people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Other", 5)
+people_demo_changed$party_type <- replace(people_demo_changed$party_type, people_demo_changed$party_type == "Parked Vehicle", 4)
 
-#people_demo_changed$party_type <- as.numeric(people_demo_changed$party_type)
+people_demo_changed$party_type <- as.numeric(people_demo_changed$party_type)
 
 #Driver - 1
 #Bicyclist - 2
@@ -196,31 +208,46 @@ people_demo_changed$party_sex <- as.numeric(people_demo_changed$party_sex)
 
 
 
-people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Impairment Unknown", 1)
-people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Not Under Influence", 2)
-people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Under Influence", 3)
-people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Not Been Drinking", 4)
-people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety %in% c("Impairment Not Known", "Not Applicable", "Not Stated"), 5)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Impairment Unknown", 2)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Not Under Influence", 3)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Been Drinking, Under Influence", 4)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety == "Had Not Been Drinking", 1)
+people_demo_changed$party_sobriety <- replace(people_demo_changed$party_sobriety, people_demo_changed$party_sobriety %in% c("Impairment Not Known", "Not Applicable", "Not Stated"), 0)
 
 people_demo_changed$party_sobriety <- as.numeric(people_demo_changed$party_sobriety)
 
 
-#Had Been Drinking, Impairment Unknown - 1
-#Had Been Drinking, Not Under Influence	- 2
-#Had Been Drinking, Under Influence	- 3
-#Had Not Been Drinking - 4
-#Impairment Not Known, Not Applicable, Not Stated	- 5
+#Had Been Drinking, Impairment Unknown - 2
+#Had Been Drinking, Not Under Influence	- 3
+#Had Been Drinking, Under Influence	- 4
+#Had Not Been Drinking - 1
+#Impairment Not Known, Not Applicable, Not Stated	- 0
 
 
 
 
-people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Asian", 1)
-people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Black", 2)
-people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Hispanic", 3)
-people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "White", 4)
-people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race %in% c("Other", "Not Stated"), 5)
+#people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Asian", 1)
+#people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Black", 2)
+#people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "Hispanic", 3)
+#people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race == "White", 4)
+#people_demo_changed$race <- replace(people_demo_changed$race, people_demo_changed$race %in% c("Other", "Not Stated"), 5)
 
-people_demo_changed$race <- as.numeric(people_demo_changed$race)
+#people_demo_changed$race <- as.numeric(people_demo_changed$race)
+
+people_demo_changed <- people_demo_changed %>%
+  # Create dummy variables for each race category
+  mutate(Asian = ifelse(race == 'Asian', 1, 0),
+         Black = ifelse(race == 'Black', 1, 0),
+         Hispanic = ifelse(race == 'Hispanic', 1, 0),
+         White = ifelse(race == 'White', 1, 0),
+         Other_Race = ifelse(race == 'Other', 1, 0),
+         Not_Stated_Race = ifelse(race == 'Not Stated', 1, 0)) %>%
+  # Select the columns we want to keep, excluding race
+  select(-race)
+
+is.numeric(people_demo_changed$Asian)
+
+people_demo_changed
 
 #Asian - 1
 #Black - 2
@@ -251,7 +278,9 @@ people_demo
 
 people_demo_changed
 
+is.numeric(people_demo_changed$party_type)
 
+is.numeric(people_demo_changed$Male)
 
 
 

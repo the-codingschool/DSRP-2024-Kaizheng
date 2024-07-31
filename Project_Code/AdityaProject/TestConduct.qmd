@@ -7,6 +7,11 @@ library(caTools)
 library(downloader)
 library(FNN)
 library(readxl)
+library(shapr)
+library(caret)
+library(randomForest)
+
+
 ```
 ```{r}
 traffic <- read.csv("Project_Code/Data/data_traffic.csv")
@@ -25,6 +30,51 @@ people_demographics
 
 
 ```
+```{r}
+people_demo_categ <- people_demo
+
+people_demo_categ
+
+
+#Significance of gender
+con_tab_sex <- table(people_demo_categ$party_sex, people_demo_categ$at_fault)
+#con_tab_sex
+
+chisq_sex <- chisq.test(con_tab_sex)
+chisq_sex
+
+#3.914e-09
+
+
+#Significance of sobriety
+con_tab_sob <- table(people_demo_categ$party_sobriety, people_demo_categ$at_fault)
+#con_tab_sob
+
+chisq_sob <- chisq.test(con_tab_sob)
+chisq_sob
+
+#< 2.2e-16
+
+#Significance of race
+con_tab_race <- table(people_demo_categ$race, people_demo_categ$at_fault)
+#con_tab_race 
+
+chisq_race <- chisq.test(con_tab_race)
+chisq_race
+
+#4.085e-16
+
+
+#Significance of driver type
+con_tab_type <- table(people_demo_categ$party_type, people_demo_categ$at_fault)
+#con_tab_type
+
+chisq_type <- chisq.test(con_tab_type)
+chisq_type
+
+#< 2.2e-16
+
+```
 
 
 ```{r}
@@ -36,20 +86,88 @@ split_dem <- sample.split(people_demographics$at_fault, SplitRatio = 0.8)
 train_dem <- subset(people_demographics, split_dem == T)
 test_dem <- subset(people_demographics, split_dem == F)
 
-#train_dem
-#test_dem
+train_dem
+test_dem
 
 
 dem_model <- knn(train = train_dem, test = test_dem, cl = train_dem$at_fault, k = 5)
 
 
-confusion_matrix <- table(test_dem$at_fault, dem_model)
+overall_confusion_matrix <- table(test_dem$at_fault, dem_model)
+overall_confusion_matrix
 
-confusion_matrix
+overall_accuracy <- sum(diag(overall_confusion_matrix))/sum(overall_confusion_matrix)
+overall_accuracy
 
-accuracy <- sum(diag(confusion_matrix))/sum(confusion_matrix)
+#95.36%
 
-accuracy
+#Testing based on race
+
+
+'
+white_test <- filter(test_dem, race == 4)
+white_test
+
+white_dem_model <- knn(train = train_dem, test = white_test, cl = train_dem$at_fault, k = 5)
+
+
+white_confusion_matrix <- table(white_test$at_fault, white_dem_model)
+white_confusion_matrix
+
+white_accuracy <- sum(diag(white_confusion_matrix))/sum(white_confusion_matrix)
+white_accuracy
+
+98.25% accuracy
+'
+
+'
+asian_test <- filter(test_dem, race == 1)
+asian_test
+
+asian_dem_model <- knn(train = train_dem, test = asian_test, cl = train_dem$at_fault, k = 5)
+
+
+asian_confusion_matrix <- table(asian_test$at_fault, asian_dem_model)
+asian_confusion_matrix
+
+asian_accuracy <- sum(diag(asian_confusion_matrix))/sum(asian_confusion_matrix)
+asian_accuracy
+
+96.23%
+'
+
+'
+black_test <- filter(test_dem, race == 2)
+black_test
+
+black_dem_model <- knn(train = train_dem, test = black_test, cl = train_dem$at_fault, k = 5)
+
+
+black_confusion_matrix <- table(black_test$at_fault, black_dem_model)
+black_confusion_matrix
+
+black_accuracy <- sum(diag(black_confusion_matrix))/sum(black_confusion_matrix)
+black_accuracy
+
+96.51%
+'
+
+'
+hispanic_test <- filter(test_dem, race == 3)
+hispanic_test
+
+hispanic_dem_model <- knn(train = train_dem, test = hispanic_test, cl = train_dem$at_fault, k = 5)
+
+
+hispanic_confusion_matrix <- table(hispanic_test$at_fault, hispanic_dem_model)
+hispanic_confusion_matrix
+
+hispanic_accuracy <- sum(diag(hispanic_confusion_matrix))/sum(hispanic_confusion_matrix)
+hispanic_accuracy
+
+98.77%
+'
+
 
 ```
 
