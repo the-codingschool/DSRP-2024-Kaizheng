@@ -100,9 +100,14 @@ nrow(clean_traffic_data) #Checking if there are less rows now
 #vz_pcf_code column has both 'Other than driver'/'Other Than Driver' + 'Other improper driving'/'Other Improper Driving'
 clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
 clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
+
+#change Vehicle/Pedestrian into Hit Pedestrian
+clean_traffic_data$type_of_collision[clean_traffic_data$type_of_collision == 'Vehicle/Pedestrian'] <- 'Hit Pedestrian'
+
 ```
 
 ```{r}
+#Adding casualty column to represent total number killed + injured
 clean_traffic_data$number_casualty <- clean_traffic_data$number_injured + clean_traffic_data$number_killed
 ```
 

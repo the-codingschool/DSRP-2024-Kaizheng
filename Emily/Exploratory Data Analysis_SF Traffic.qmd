@@ -100,14 +100,18 @@ ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x
   scale_fill_discrete(name = "Legend")
 ```
 
-```{r}
+#### VS collision_severity
+
+```{r plot-wider, fig.width=8}
 #bar graph of occurences of type_of_collision_merge filled by collision_severity
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, fill=collision_severity)) +
-  geom_bar() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  geom_bar(position="dodge") +
+  theme()+
 labs(x='Type of Collision',y='Collision Severity by Count', title='Effect of Type of Collision on Collision Severity') +
   scale_fill_discrete(name = "Legend")
 ```
+
+#### VS number_casualty, number_killed, number_injured
 
 ```{r}
 #bar graph of average number_casualty based on type_of_collision_merge 
@@ -120,20 +124,20 @@ ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x
 ```
 
 ```{r}
-#bar graph of average number_injury based on type_of_collision_merge 
+#bar graph of average number_injured based on type_of_collision_merge 
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_injured, fill=type_of_collision_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
-  labs(x='Type of Collision',y='Average Number of Casualties', title='Effect of Movement on Number of Casualties in Car Accidents') +
+  labs(x='Type of Collision',y='Average Number Injured', title='Effect of Movement on Number of Injured in Car Accidents') +
   scale_fill_discrete(name = "Legend")
 ```
 
 ```{r}
-#bar graph of average number_injury based on move_pre_acc 
+#bar graph of average number_killed based on move_pre_acc 
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_killed, fill=type_of_collision_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
-  labs(x='Type of Collision',y='Average Number of Casualties', title='Effect of Movement on Number of Casualties in Car Accidents') +
+  labs(x='Type of Collision',y='Average Number of Deaths', title='Effect of Movement on Number of Deaths in Car Accidents') +
   scale_fill_discrete(name = "Legend")
 ```
 
@@ -196,8 +200,22 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
   geom_bar() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
   labs(x='Movement Prior to Accident',y='Number of Car Accidents', title='Movement Compared to the Number of Car Accidents') +
-  scale_fill_discrete(name = "Legend")
+  scale_fill_discrete(name = "Legend") + 
+  geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
+
+# data <- data.frame(
+#   names <- c('Making Left Turn','Making Right Turn', 'Merging/Passing/Changing Lanes', 'Other', 'Parking/Backing', 'Proceeding Straight', 'Slowing/Stopped'),
+#   occurences <- c(3286, 1347, 1275, 1807, 508, 17447, 4470)
+# )
+# 
+# ggplot(data, aes(x="", y=occurences, fill=names)) +
+#   geom_bar(stat="identity", width=1) +
+#   coord_polar("y", start=0)+
+#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
 ```
+
+#### VS collision_severity
 
 ```{r}
 #bar graph of occurences of move_pre_acc filled by collision_severity
@@ -205,10 +223,52 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
   geom_bar() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
 labs(x='Movement Prior to Accident',y='Collision Severity by Count', title='Effect of Movement on Collision Severity') +
-  theme(plot.margin=unit(c(2,1,1,1), 'cm')) +
   scale_fill_discrete(name = "Legend")
 
 ```
+
+```{r}
+#bar graph of number of 'Fatal' collision_severity cases by move_pre_acc
+clean_traffic_data_fatal <- clean_traffic_data %>%
+filter(collision_severity == 'Fatal')
+
+ggplot(data = subset(clean_traffic_data_fatal, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=move_pre_acc_merge)) +
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Amount of Fatal Accidents', title='Effect of Movement on Fatality in Car Accidents') +
+  scale_fill_discrete(name = "Legend")+ 
+  geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
+```
+
+```{r}
+#bar graph of number of 'Medical' collision_severity cases by move_pre_acc
+clean_traffic_data_medical <- clean_traffic_data %>%
+filter(collision_severity == 'Medical')
+
+ggplot(data = subset(clean_traffic_data_medical, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=move_pre_acc_merge)) +
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Amount of Medical Accidents', title='Effect of Movement on Medical Need in Car Accidents') +
+  scale_fill_discrete(name = "Legend")+ 
+  geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
+#shown that there seems to be much missing/weird data in this category, going to ignore
+```
+
+```{r}
+#bar graph of number of 'Injury (Complaint of Pain)' collision_severity cases by move_pre_acc
+clean_traffic_data_fatal <- clean_traffic_data %>%
+filter(collision_severity == 'Injury (Complaint of Pain)')
+
+ggplot(data = subset(clean_traffic_data_fatal, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, fill=move_pre_acc_merge)) +
+  geom_bar() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+labs(x='Movement Prior to Accident',y='Amount of Accidents with Complaint of Pain', title='Effect of Movement on Complaint of Pain in Car Accidents') +
+  scale_fill_discrete(name = "Legend") + 
+  geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
+
+```
+
+#### VS number_casualty, number_killed, number_injured
 
 ```{r}
 #bar graph of average number_casualty based on move_pre_acc 
