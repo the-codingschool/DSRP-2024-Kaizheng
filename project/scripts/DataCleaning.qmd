@@ -224,7 +224,7 @@ Visualize results
 ggplot(test_data, aes(x = new_col_sever, y = pred)) +
   geom_point() +
   geom_abline(linetype = "dashed", color = "red") +
-  labs(title = "Real vs Predicted Values",
+  labs(title = "Real vs Predicted Values Using time, age, and number injured",
        x = "True collision severity",
        y = "Predicted collision severity")
 
