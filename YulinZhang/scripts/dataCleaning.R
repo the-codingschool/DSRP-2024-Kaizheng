@@ -1,4 +1,4 @@
-libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools")
+libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools", "scales")
 for (lib in libs) {
   if (!require(lib, character.only = TRUE)) install.packages(lib, character.only = TRUE)
   library(lib, character.only = TRUE)
@@ -102,12 +102,15 @@ popu <- data |>
 
 ## Extremely few data points below 15 years old and 90 years old
 ggplot(popu, aes(x = party_age)) +
-  geom_histogram(binwidth = 12, boundary = 0) +
-  scale_x_continuous(breaks = seq(0, 108, 12)) +
+  geom_histogram(binwidth = 15, boundary = 0) +
+  scale_x_continuous(breaks = seq(0, 130, 15)) +
   geom_text(
-    stat = "bin", aes(label = after_stat(count)),
-    vjust = -1, breaks = seq(0, 108, 12)
-  )
+    stat = "bin",
+    aes(label = percent(after_stat(count) / sum(after_stat(count)), accuracy = 0.01)),
+    vjust = -0.5,
+    breaks = seq(0, 130, 15)
+  ) +
+  labs(title = "Distribution of Population by Ages")
 
 ## Test if lighting conditions differ by chance with log-linear test
 
@@ -119,7 +122,6 @@ light_data <- filter(popu, lighting == "Daylight")
 
 run_rlr(dark_data)
 run_rlr(light_data)
-
 
 run_rlr = function(data) {
   data <- data |>
@@ -133,24 +135,34 @@ run_rlr = function(data) {
     
   rlr_model <<- rlm(mean_cas ~ party_age, data = train_data)
   pred <- predict(rlr_model, newdata = test_data)
-
+  
+  print(ggplot(data, aes(x = mean_cas, y = "")) +
+          geom_boxplot() +
+          labs(title = "Distribution of Avg. Casualty",
+               x = "Avg. Casualty"))
+  
   print(ggplot(data, aes(x = party_age, y = mean_cas)) +
           geom_point() +
           geom_smooth(method = MASS::rlm) +
-          labs(title = paste("Predicted Avg. Casualty vs. Party Age"),
+          labs(title = "Predicted Avg. Casualty vs. Party Age",
                x = "Party Age",
                y = "Predicted Avg. Casualty"))
   
   # Print the performance of model
   mse <- mean((test_data$mean_cas - pred) ^ 2)
   mae <- mean(abs(test_data$mean_cas - pred))
-
+  
+  # Low R-square due to outliers
   Y <- test_data$mean_cas
-  r_sq <- 1 - sum((test_data$mean_cas - pred)^2) / sum((Y - mean(Y))^2)
+  r_sq <- 1 - sum((Y - pred)^2) / sum((Y - mean(Y))^2)
   
   cat("Mean Squared Error:", mse,
       "\nMean Absolute Error:", mae,
       "\nR-Squared:", r_sq)
+  
+  cat("\nOn average, predictions are off from the actual casualties by",
+      mae,
+      "people.")
 }
 
 
