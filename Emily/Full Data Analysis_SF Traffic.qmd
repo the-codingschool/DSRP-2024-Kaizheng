@@ -1,0 +1,133 @@
+---
+title: "Full Data Analysis_SF Traffic"
+format: html
+editor: visual
+---
+
+# Part 2: Exploratory Data Analysis-SF Traffic
+
+## Preparation
+
+### Import All Necessary Packages
+
+```{r}
+library(janitor) 
+library(tidyr)  
+library(tidyverse)  
+library(dplyr)  
+library(ggplot2)  
+library(readr)
+
+options(repos = c(CRAN = "https://cran.r-project.org"))
+# Install packages if necessary
+install.packages("caTools")
+install.packages("downloader")
+install.packages("caTools")
+install.packages("FNN")
+install.packages("readxl")
+
+# Load libraries
+library(downloader)
+library(caTools)
+library(FNN)
+library(readxl)
+```
+
+### Reading in Data
+
+```{r}
+#Define url of data 
+url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'  
+# Load the dataset into a dataframe called traffic_data 
+clean_traffic_data <- read_csv(url) 
+print(clean_traffic_data)
+```
+
+## Chi-Squared
+
+```{r}
+options(repos = c(CRAN = "https://cran.r-project.org"))
+# Install packages if necessary
+install.packages("ggplot2")
+install.packages("caTools")
+install.packages("readr")
+install.packages("downloader")
+install.packages("caTools")
+install.packages("FNN")
+install.packages("readxl")
+
+# Load libraries
+library(ggplot2)
+library(caTools)
+library(readr)
+library(downloader)
+library(caTools)
+library(FNN)
+library(readxl)
+```
+
+```{r}
+#Chi-Squared (correlation) for move_pre_acc_merge and collision_severity
+con_table <- table(clean_traffic_data$move_pre_acc_merge, clean_traffic_data$collision_severity)
+
+chisq_results <- chisq.test(con_table)
+
+chisq_results$p.value
+
+chisq_results$residuals
+
+#1.775853e-38 is smaller than 0.05, meaning strong dependence between the 2 groups
+```
+
+```{r}
+#Chi-Squared (correlation) for type_of_collision_merge and move_pre_acc_merge
+con_table <- table(clean_traffic_data$type_of_collision_merge, clean_traffic_data$move_pre_acc_merge)
+
+chisq_results <- chisq.test(con_table)
+
+chisq_results$p.value
+
+chisq_results$residuals
+
+#0 is smaller than 0.05, meaning very strong dependence between the 2 groups
+```
+
+## ANOVA Test
+
+```{r}
+aov(data = clean_traffic_data, number_casualty ~ type_of_collision_merge)
+summary(anova_test)
+TukeyHSD(anova_test)
+
+```
+
+## KNN
+
+```{r}
+set.seed(30) 
+
+split <- sample.split(clean_traffic_data$collision_severity, SplitRatio = 0.8)
+train_data <- subset(clean_traffic_data, split == TRUE) 
+test_data <- subset(clean_traffic_data, split == FALSE)
+
+
+knn_model <- knn(train = train_data[c('type_of_collision_merge', 'move_pre_acc_merge')], 
+test = test_data[, c('type_of_collision_merge', 'move_pre_acc_merge')], 
+cl = train_data$collision_severity, 
+k = 5)
+
+
+
+pred <- predict(lr_model, newdata = test_data)
+
+
+
+confusion_matrix <- table(test_data$type_of_collision, pred)
+
+accuracy <- sum(diag(confusion_matrix)) / 
+     sum(confusion_matrix)
+
+
+
+
+```
