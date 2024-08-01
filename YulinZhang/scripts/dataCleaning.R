@@ -1,4 +1,5 @@
-libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2", "caTools", "scales")
+libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2",
+          "caTools", "scales", "ggpubr", "gridExtra", "cowplot")
 for (lib in libs) {
   if (!require(lib, character.only = TRUE)) install.packages(lib, character.only = TRUE)
   library(lib, character.only = TRUE)
@@ -94,59 +95,95 @@ ggplot(sam_hrs, aes(x = hrs, y = hurt)) +
 ## RQ2: Predict road condition given location (longitude + latitude)
 ## KNN?
 
+## Investigation of RQ1
+graph_data <- function(data) {
+  data <- data |>
+    group_by(party_age) |>
+    summarize(mean_cas = mean(number_injured + number_killed))
+  
+  ## Graph the distribution of the data (outliers <15 yrs and >75 yrs)
+  return(
+    ggplot(data, aes(x = party_age, y = mean_cas)) +
+    geom_point() +
+    labs(title = "Avg. Casualty vs. Party Age",
+         x = "Party Age",
+         y = "Avg. Casualty"))
+}
+
 
 popu <- data |>
   drop_na(party_age, number_injured, number_killed) |>
+  ## Only focus on driver's data to eliminate irrelevant data points
   filter(party_age > 0, party_type == "Driver") |>
   mutate(total_cas = number_injured + number_killed)
 
-## Extremely few data points below 15 years old and 90 years old
+## Extremely few data points <10-years-old and >90-yearsold
 ggplot(popu, aes(x = party_age)) +
-  geom_histogram(binwidth = 15, boundary = 0) +
-  scale_x_continuous(breaks = seq(0, 130, 15)) +
+  geom_histogram(binwidth = 10, boundary = 0, aes(fill = after_stat(count))) +
   geom_text(
     stat = "bin",
     aes(label = percent(after_stat(count) / sum(after_stat(count)), accuracy = 0.01)),
     vjust = -0.5,
-    breaks = seq(0, 130, 15)
+    breaks = seq(0, 120, 10)
   ) +
+  scale_fill_gradient(low = "purple", high = "orange") +
+  scale_x_continuous(breaks = seq(0, 120, 10)) +
   labs(title = "Distribution of Population by Ages")
 
-## Test if lighting conditions differ by chance with log-linear test
+
+before <- graph_data(popu)
+popu <- filter(popu, party_age > 15, party_age < 75)
+after <- graph_data(popu)
+
+cowplot::plot_grid(
+  before, after,
+  labels = c("Before", "After"),
+  ncol = 2,
+  nrow = 1
+)
+
+
+
+## [Task] Test if diff. in lighting conditions are significant w/
+##        chi-square test or log-linear test
 
 
 ## Split the data into dark (merge them) and light condition
 table(popu$lighting)
+## Too few dark data points, have to merge
 dark_data <- filter(popu, str_detect(lighting, "Dark|Dusk"))
 light_data <- filter(popu, lighting == "Daylight")
 
-run_rlr(dark_data)
-run_rlr(light_data)
-
 run_rlr = function(data) {
+  ## Use robust linear regression models to diminish the effect the outliers
+  ## by assigning them lower weights than non-outliers
   data <- data |>
     group_by(party_age) |>
-    ## filter(party_age > 15, party_age < 75) |>
+    ## filter(party_age > 15, party_age < 90) |>
     summarize(mean_cas = mean(number_injured + number_killed))
   
+  ## Split the data into training and testing datasets (80% : 20%)
   split <- sample.split(data$mean_cas, SplitRatio = 0.8)
   train_data <- subset(data, split == T)
   test_data <- subset(data, split == F)
-    
-  rlr_model <<- rlm(mean_cas ~ party_age, data = train_data)
+  
+  ## Train and test the robust linear regression model
+  rlr_model <- rlm(mean_cas ~ party_age, data = train_data)
   pred <- predict(rlr_model, newdata = test_data)
   
+  ## Graph the distribution and identify the outliers
   print(ggplot(data, aes(x = mean_cas, y = "")) +
           geom_boxplot() +
           labs(title = "Distribution of Avg. Casualty",
                x = "Avg. Casualty"))
   
+  # Visualize the regression line
   print(ggplot(data, aes(x = party_age, y = mean_cas)) +
           geom_point() +
           geom_smooth(method = MASS::rlm) +
-          labs(title = "Predicted Avg. Casualty vs. Party Age",
+          labs(title = "Avg. Casualty vs. Party Age",
                x = "Party Age",
-               y = "Predicted Avg. Casualty"))
+               y = "Avg. Casualty"))
   
   # Print the performance of model
   mse <- mean((test_data$mean_cas - pred) ^ 2)
@@ -166,7 +203,9 @@ run_rlr = function(data) {
 }
 
 
+## [Task] Observe the diff. between avg. casualty by lighting
+run_rlr(dark_data)
+run_rlr(light_data)
 
-## https://stackoverflow.com/questions/65137690/plotting-polynomial-regression-curves-in-r
-## too few data points!!
-
+## compare robust regression model performance
+?plot_grid
