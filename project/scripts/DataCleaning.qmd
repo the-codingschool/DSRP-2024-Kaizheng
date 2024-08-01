@@ -184,13 +184,14 @@ chisq_time_data |>
   filter(collision_severity %in% c("Fatal", "Injury (Complaint of Pain)")) |>
   ggplot(aes(x = collision_severity, fill = new_time_cat)) + geom_bar(position = "dodge") +
   labs(title = "Effect of time on collision severities", x = "Collision Severity") + guides(fill=guide_legend(title="Time")) + facet_wrap(~ collision_severity, scales = "free")
+ggplot(chisq_time_data, aes(x = new_time_cat)) + geom_bar() + labs(title = "Number of car crashses at different times", x = "Time", y = "Count")
 ```
 
 Polynomial regression
 
 ```{r}
 MLdata <- traffic_data |>
-  select("time_cat", "party_age", "number_injured", "collision_severity") |>
+  select("time_cat","number_injured", "party_age", "collision_severity") |>
   filter(collision_severity != "Medical") |>
   na.omit()
 MLdata <-
@@ -213,7 +214,7 @@ test_data <- subset(MLdata, split == FALSE) |>
 Fit model on training data and predict
 
 ```{r}
-lr_model <- lm(new_col_sever ~ time_cat + party_age + number_injured, data = train_data)
+lr_model <- lm(new_col_sever ~ time_cat + number_injured + party_age, data = train_data)
 #predict
 test_data$pred <- predict(lr_model, newdata = test_data)
 ```
@@ -221,20 +222,19 @@ test_data$pred <- predict(lr_model, newdata = test_data)
 Visualize results
 
 ```{r}
-ggplot(test_data, aes(x = new_col_sever, y = pred)) +
+test_data_filtered <- test_data %>%
+  filter(!(new_col_sever == 1 & pred > 1.4))
+ggplot(test_data_filtered, aes(x = new_col_sever, y = pred)) +
   geom_point() +
   geom_abline(linetype = "dashed", color = "red") +
   labs(title = "Real vs Predicted Values Using time, age, and number injured",
        x = "True collision severity",
        y = "Predicted collision severity")
-
 ```
 
 Testing accuracy
 
 ```{r}
-mse <-  mean((test_data$new_col_sever - pred)^2)
 r_squared <- summary(lr_model)$r.squared
-mse
 r_squared
 ```
