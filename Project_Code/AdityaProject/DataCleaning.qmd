@@ -316,9 +316,12 @@ is.numeric(people_demo_changed$Male)
 
 ```
 ```{r}
-sig_accident_info <- select(traffic, c(collision_severity, type_of_collision, ped_action, road_surface, lighting, number_injured, party_type, party_sex, party_age, party_sobriety, race, at_fault))
+sig_accident_info <- select(traffic, c(collision_severity, type_of_collision, ped_action, road_surface, lighting, number_injured, party_type, party_sex, party_age, party_sobriety, race, stwd_vehicle_type, vehicle_autonomous, at_fault))
+
+
 
 str(sig_accident_info)
+
 
 
 sig_accident_info$party_age <- replace(sig_accident_info$party_age, is.na(sig_accident_info$party_age), mean_age)
@@ -419,13 +422,13 @@ sig_accident_info$collision_severity <- as.numeric(sig_accident_info$collision_s
 sig_accident_info <- sig_accident_info %>%
   mutate(Broadside = ifelse(type_of_collision == 'Broadside', 1, 0),
          Head_On = ifelse(type_of_collision == 'Head-On', 1, 0),
-         Hit_Object = ifelse(type_of_collision == 'Hit_Object', 1, 0),
+         Hit_Object = ifelse(type_of_collision == 'Hit Object', 1, 0),
          Not_Stated_TypeCollision = ifelse(type_of_collision == 'Not Stated', 1, 0),
          Other_TypeCollision = ifelse(type_of_collision == 'Other', 1, 0),
          Overturned = ifelse(type_of_collision == 'Overturned', 1, 0),
          Rear_End = ifelse(type_of_collision == 'Rear End', 1, 0),
          Sideswipe = ifelse(type_of_collision == 'Sideswipe', 1, 0),
-         Vehicle_Ped = ifelse(type_of_collision == 'Vehicle/Pedestrian', 1, 0)) %>%
+         Vehicle_Hit_Ped = ifelse(type_of_collision == 'Vehicle/Pedestrian', 1, 0)) %>%
   select(-type_of_collision)
 
 
@@ -446,11 +449,13 @@ sig_accident_info$road_surface <- as.numeric(sig_accident_info$road_surface)
 #Snowy or Icy - 5
 
 
+
 sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting == "Not Stated", 1)
+sig_accident_info$lighting <- replace(sig_accident_info$lighting, is.na(sig_accident_info$lighting), 1)
 sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting == "Daylight", 2)
 sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting == "Dusk - Dawn", 3)
 sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting == "Dark - Street Lights", 4)
-sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting %in% c("Dark - No Street Lights", "Dark - Street Lights Not Functioning	"), 5)
+sig_accident_info$lighting <- replace(sig_accident_info$lighting, sig_accident_info$lighting %in% c("Dark - No Street Lights", "Dark - Street Lights Not Functioning"), 5)
 
 sig_accident_info$lighting <- as.numeric(sig_accident_info$lighting)
 
@@ -462,7 +467,7 @@ sig_accident_info$lighting <- as.numeric(sig_accident_info$lighting)
 
 sig_accident_info <- sig_accident_info %>%
   mutate(Walking_From_SchoolBus = ifelse(ped_action == 'Approaching/Leaving School Bus', 1, 0),
-         Crossing_NI_CW = ifelse(ped_action == 'Crossing Not in Crosswalk', 1, 0),
+         Crossing_NotIn_CrossWalk = ifelse(ped_action == 'Crossing Not in Crosswalk', 1, 0),
          Not_Stated_TypeCollision = ifelse(ped_action == 'Not Stated', 1, 0),
          Crossing_CW_NINT = ifelse(ped_action == 'Crossing in Crosswalk Not at Intersection', 1, 0),
          Crossing_CW_INT = ifelse(ped_action == 'Crossing in Crosswalk at Intersection', 1, 0),
@@ -476,10 +481,36 @@ sig_accident_info <- sig_accident_info %>%
 
 
 
+sig_accident_info <- sig_accident_info %>%
+  mutate(Passenger = ifelse(grepl("Passenger", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Pedestrian = ifelse(grepl("Pedestrian", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Motorcycle = ifelse(grepl("Motorcycle", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Terrain = ifelse(grepl("Terrain|Dune", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Bicycle = ifelse(grepl("Bicycle", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Zip_Scooter = ifelse(grepl("Zip|Scooter", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Pickup = ifelse(grepl("Pickup", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Police = ifelse(grepl("Police", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Public = ifelse(grepl("Public", sig_accident_info$stwd_vehicle_type), 1, 0),
+         SUV = ifelse(grepl("Sport Utility Vehicle", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Unknown = ifelse(grepl("Unknown", sig_accident_info$stwd_vehicle_type), 1, 0),
+         Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", sig_accident_info$stwd_vehicle_type), 1, 0)) %>%
+  select(-stwd_vehicle_type)
 
-str(sig_accident_info)
 
 
+sig_accident_info <- sig_accident_info %>%
+  mutate(Auto_DriverInControl = ifelse(vehicle_autonomous == 'Autonomous vehicle operating under driver control at time of collision', 1, 0),
+         AutoEngagedFeature_DriverPresent = ifelse(vehicle_autonomous == 'Autopilot engaged (autoparking, etc.) with driver present', 1, 0),
+         Not_Stated_Autonomous = ifelse(vehicle_autonomous == 'Not Stated', 1, 0),
+        Auto_Only = ifelse(vehicle_autonomous == 'Driverless vehicle with passenger only, no driver override possible', 1, 0),
+         Auto_NA = ifelse(vehicle_autonomous == 'Not applicable, conventional vehicle', 1, 0),
+         FullAutoEngaged_DriverPresent = ifelse(vehicle_autonomous == 'Operating in autonomous mode at time of collision with a driver present', 1, 0)) %>%
+  select(-vehicle_autonomous)
+
+
+
+sig_accident_info
 
 
 

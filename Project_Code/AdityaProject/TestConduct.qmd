@@ -219,20 +219,82 @@ hispanic_accuracy
 
 
 ```
+
+
+
+
 ```{r}
-accident_info <- select(traffic, c(day_of_week, time_cat, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, ped_action, road_surface, lighting, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, at_fault))
+accident_info <- select(traffic, c(day_of_week, time_cat, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, ped_action, road_surface, lighting, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, accident_year, month, weather_1, vz_pcf_description, stwd_vehicle_type, vehicle_autonomous, at_fault))
 
 accident_info
 
+count(accident_info, vz_pcf_description)
 
-CHIS <- lapply(accident_info[,-18], function(x) chisq.test(table(accident_info[,18], x)))
+ncol(accident_info)
+
+
+CHIS <- lapply(accident_info[,-24], function(x) chisq.test(table(accident_info[,24], factor(x))))
 
 do.call(rbind, CHIS) [, c(1,3)]
 
 
 
+```
+
+```{r}
+standardized_accident_info <- sig_accident_info
+
+standardized_accident_info <- as.data.frame(lapply(sig_accident_info[,], normalize))
+
+standardized_accident_info
 
 
+
+set.seed(135)
+
+
+standard_split <- sample.split(standardized_accident_info$at_fault, SplitRatio = 0.8)
+
+train_stand <- subset(standardized_accident_info, standard_split == T)
+test_stand <- subset(standardized_accident_info, standard_split == F)
+
+
+#Usually we standardize the data before to reduce all the features to the same scale, but does it need to be done in this case and if so, should we also scale after one hot encoding
+
+#scaled_train_dem <- scale(train_dem, center = TRUE, scale = TRUE)
+#scaled_test_dem <- scale(test_dem, center = TRUE, scale = TRUE)
+
+#scaled_train_dem
+#scaled_test_dem
+
+
+
+#Determining the k
+
+k_num_stand <- as.integer(sqrt(nrow(test_stand)))
+k_num_stand
+
+
+
+stand_model <- knn(train = train_stand, test = test_stand, cl = train_stand$at_fault, k = k_num_stand)
+
+stand_model
+
+
+actual_stand_vals <- factor(test_stand$at_fault)
+actual_stand_vals
+
+f1_score_stand <- confusionMatrix(factor(stand_model), actual_stand_vals, mode = "everything", positive = "1")
+
+f1_score_stand
+
+
+
+standard_confusion_matrix <- table(test_stand$at_fault, stand_model)
+standard_confusion_matrix
+
+standard_accuracy <- sum(diag(standard_confusion_matrix))/sum(standard_confusion_matrix)
+standard_accuracy
 
 ```
 
