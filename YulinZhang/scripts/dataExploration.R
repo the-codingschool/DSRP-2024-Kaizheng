@@ -96,26 +96,25 @@ ggplot(sam_hrs, aes(x = hrs, y = hurt)) +
 ## KNN?
 
 ## Investigation of RQ1
-graph_data <- function(data) {
-  data <- data |>
-    group_by(party_age) |>
-    summarize(mean_cas = mean(number_injured + number_killed))
-  
-  ## Graph the distribution of the data (outliers <15 yrs and >75 yrs)
+group_by_age <- function(data) {
+  return(data |>
+           group_by(party_age) |>
+           summarize(mean_cas = mean(data$number_killed)))
+}
+
+graph_data <- function(data, subtitle) {
   return(
     ggplot(data, aes(x = party_age, y = mean_cas)) +
     geom_point() +
-    labs(title = "Avg. Casualty vs. Party Age",
+    labs(subtitle = subtitle,
          x = "Party Age",
-         y = "Avg. Casualty"))
+         y = "Average Casualty"))
 }
-
 
 popu <- data |>
   drop_na(party_age, number_injured, number_killed) |>
   ## Only focus on driver's data to eliminate irrelevant data points
-  filter(party_age > 0, party_type == "Driver") |>
-  mutate(total_cas = number_injured + number_killed)
+  filter(party_age > 0, party_type == "Driver")
 
 ## Extremely few data points <10-years-old and >90-yearsold
 ggplot(popu, aes(x = party_age)) +
@@ -131,81 +130,78 @@ ggplot(popu, aes(x = party_age)) +
   labs(title = "Distribution of Population by Ages")
 
 
-before <- graph_data(popu)
-popu <- filter(popu, party_age > 15, party_age < 75)
-after <- graph_data(popu)
+h_lim <- xlim(range(popu$party_age))
+v_lim <- ylim(1, 2)
 
-cowplot::plot_grid(
-  before, after,
-  labels = c("Before", "After"),
-  ncol = 2,
-  nrow = 1
-)
-
-
-
-## [Task] Test if diff. in lighting conditions are significant w/
-##        chi-square test or log-linear test
+before <- graph_data(group_by_age(popu), "With Outliers")
+popu <- filter(group_by_age(popu), party_age > 15, party_age < 75)
+after <- graph_data(group_by_age(popu), "Without Outliers")
+gphs <- plot_grid(before + h_lim + v_lim,
+                  after + h_lim + v_lim,
+                  labels = "AUTO",
+                  ncol = 2)
+title <- ggdraw() + draw_label("Average Casualty vs. Party Age",
+                               fontface = 'bold', size = 18)
+plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
 
 
 ## Split the data into dark (merge them) and light condition
 table(popu$lighting)
 ## Too few dark data points, have to merge
-dark_data <- filter(popu, str_detect(lighting, "Dark|Dusk"))
-light_data <- filter(popu, lighting == "Daylight")
+dark_data <- group_by_age(filter(popu, str_detect(lighting, "Dark|Dusk")))
+light_data <- group_by_age(filter(popu, lighting == "Daylight"))
 
-run_rlr = function(data) {
-  ## Use robust linear regression models to diminish the effect the outliers
-  ## by assigning them lower weights than non-outliers
-  data <- data |>
-    group_by(party_age) |>
-    ## filter(party_age > 15, party_age < 90) |>
-    summarize(mean_cas = mean(number_injured + number_killed))
-  
+run_rlr = function(data, lgh) {
   ## Split the data into training and testing datasets (80% : 20%)
   split <- sample.split(data$mean_cas, SplitRatio = 0.8)
   train_data <- subset(data, split == T)
   test_data <- subset(data, split == F)
   
   ## Train and test the robust linear regression model
+  ## RLM can diminish the impacts of the outliers by
+  ## assigning them lower weights than non-outliers
   rlr_model <- rlm(mean_cas ~ party_age, data = train_data)
   pred <- predict(rlr_model, newdata = test_data)
   
-  ## Graph the distribution and identify the outliers
-  print(ggplot(data, aes(x = mean_cas, y = "")) +
-          geom_boxplot() +
-          labs(title = "Distribution of Avg. Casualty",
-               x = "Avg. Casualty"))
-  
-  # Visualize the regression line
-  print(ggplot(data, aes(x = party_age, y = mean_cas)) +
-          geom_point() +
-          geom_smooth(method = MASS::rlm) +
-          labs(title = "Avg. Casualty vs. Party Age",
-               x = "Party Age",
-               y = "Avg. Casualty"))
-  
-  # Print the performance of model
+  ## Print the performance of model
   mse <- mean((test_data$mean_cas - pred) ^ 2)
   mae <- mean(abs(test_data$mean_cas - pred))
   
-  # Low R-square due to outliers
+  ## Low R-square due to outliers
   Y <- test_data$mean_cas
   r_sq <- 1 - sum((Y - pred)^2) / sum((Y - mean(Y))^2)
   
   cat("Mean Squared Error:", mse,
       "\nMean Absolute Error:", mae,
       "\nR-Squared:", r_sq)
-  
   cat("\nOn average, predictions are off from the actual casualties by",
       mae,
       "people.")
+  
+  return(ggplot(data, aes(x = party_age, y = mean_cas)) +
+           geom_point() +
+           geom_smooth(method = MASS::rlm) +
+           labs(subtitle = lgh,
+                x = "Party Age",
+                y = "Avg. Casualty"))
 }
 
 
 ## [Task] Observe the diff. between avg. casualty by lighting
-run_rlr(dark_data)
-run_rlr(light_data)
+dark_gph <- run_rlr(dark_data, "Dark/dusk")
+light_gph <- run_rlr(light_data, "Daylight")
+
+h_lim <- xlim(range(popu$party_age))
+v_lim <- ylim(range(paste(
+                          
+                          )))))
+gphs <- plot_grid(dark_gph + h_lim + v_lim,
+                  light_gph + h_lim + v_lim,
+                  labels = "AUTO",
+                  ncol = 2)
+title <- ggdraw() + draw_label("Predicted Average Casualty vs. Party Age",
+                               fontface = 'bold', size = 18)
+plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
 
 ## compare robust regression model performance
-?plot_grid
+
