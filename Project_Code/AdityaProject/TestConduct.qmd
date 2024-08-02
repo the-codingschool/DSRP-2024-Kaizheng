@@ -13,23 +13,24 @@ library(randomForest)
 
 
 ```
+
 ```{r}
 traffic <- read.csv("Project_Code/Data/data_traffic.csv")
 
 traffic
 
-acc_info <- select(traffic, c(unique_id, case_id_pkey, tb_latitude, tb_longitude, collision_time, day_of_week, time_cat, reporting_district, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, mviw, ped_action, road_surface, lighting, intersection, vz_pcf_description, number_killed, number_injured, at_fault, dph_col_grp_description))
+#acc_info <- select(traffic, c(unique_id, case_id_pkey, tb_latitude, tb_longitude, collision_time, day_of_week, time_cat, reporting_district, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, mviw, ped_action, road_surface, lighting, intersection, vz_pcf_description, number_killed, number_injured, at_fault, dph_col_grp_description))
 
 
 
-people_demographics <- people_demo_changed
 
-people_demographics
+
 
 
 
 
 ```
+
 ```{r}
 people_demo_categ <- people_demo
 
@@ -38,7 +39,7 @@ people_demo_categ
 
 #Significance of gender
 con_tab_sex <- table(people_demo_categ$party_sex, people_demo_categ$at_fault)
-#con_tab_sex
+con_tab_sex
 
 chisq_sex <- chisq.test(con_tab_sex)
 chisq_sex
@@ -48,7 +49,7 @@ chisq_sex
 
 #Significance of sobriety
 con_tab_sob <- table(people_demo_categ$party_sobriety, people_demo_categ$at_fault)
-#con_tab_sob
+con_tab_sob
 
 chisq_sob <- chisq.test(con_tab_sob)
 chisq_sob
@@ -76,21 +77,69 @@ chisq_type
 
 ```
 
-
 ```{r}
 #Modeling based on demographics
 
-set.seed(50)
+people_demographics <- people_demo_changed
+
+people_demographics
+
+set.seed(9000)
 
 split_dem <- sample.split(people_demographics$at_fault, SplitRatio = 0.8)
 train_dem <- subset(people_demographics, split_dem == T)
 test_dem <- subset(people_demographics, split_dem == F)
 
+normalize <- function(x) {
+  return ( (x - min(x)) / (max(x) - min(x)))
+}
+
+train_dem_standard <- as.data.frame(lapply(train_dem[, c(1,3,4,5,6,7,8,9,10,11,12,13,14)], normalize))
+test_dem_standard <- as.data.frame(lapply(test_dem[, c(1,3,4,5,6,7,8,9,10,11,12,13,14)], normalize))
+
+train_dem_standard
+
 train_dem
-test_dem
+str(test_dem_standard)
+
+#Usually we standardize the data before to reduce all the features to the same scale, but does it need to be done in this case and if so, should we also scale after one hot encoding
+
+#scaled_train_dem <- scale(train_dem, center = TRUE, scale = TRUE)
+#scaled_test_dem <- scale(test_dem, center = TRUE, scale = TRUE)
+
+#scaled_train_dem
+#scaled_test_dem
 
 
-dem_model <- knn(train = train_dem, test = test_dem, cl = train_dem$at_fault, k = 5)
+
+#Determining the k
+
+
+?n
+
+str(test_dem_standard)
+
+
+k_num <- as.integer(sqrt(nrow(test_dem_standard)))
+
+k_num
+
+
+
+
+
+dem_model <- knn(train = train_dem_standard, test = test_dem_standard, cl = train_dem$at_fault, k = k_num)
+
+dem_model
+
+actual_vals <- factor(test_dem$at_fault)
+
+actual_vals
+
+f1_score <- confusionMatrix(factor(dem_model), actual_vals, mode = "everything", positive = "1")
+
+f1_score
+
 
 
 overall_confusion_matrix <- table(test_dem$at_fault, dem_model)
@@ -99,7 +148,7 @@ overall_confusion_matrix
 overall_accuracy <- sum(diag(overall_confusion_matrix))/sum(overall_confusion_matrix)
 overall_accuracy
 
-#95.36%
+#99.87%
 
 #Testing based on race
 
@@ -167,6 +216,22 @@ hispanic_accuracy
 
 98.77%
 '
+
+
+```
+```{r}
+accident_info <- select(traffic, c(day_of_week, time_cat, primary_rd, secondary_rd, distance, collision_severity, type_of_collision, ped_action, road_surface, lighting, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, at_fault))
+
+accident_info
+
+
+CHIS <- lapply(accident_info[,-18], function(x) chisq.test(table(accident_info[,18], x)))
+
+do.call(rbind, CHIS) [, c(1,3)]
+
+
+
+
 
 
 ```

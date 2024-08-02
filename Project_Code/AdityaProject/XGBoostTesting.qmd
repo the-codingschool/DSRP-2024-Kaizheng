@@ -1,0 +1,52 @@
+```{r}
+library(xgboost)
+library(fastDummies)
+library(dplyr)
+
+
+people_demo_xgb <- people_demo
+
+people_demo_xgb
+
+people_demo_xgb <- filter(people_demo_xgb, party_age > 0)
+
+
+#Isolate x and y
+
+people_demo_xgb$at_fault <- replace(people_demo_xgb$at_fault, people_demo_xgb$at_fault == "No", 0)
+people_demo_xgb$at_fault <- replace(people_demo_xgb$at_fault, people_demo_xgb$at_fault == "Yes", 1)
+
+y <- as.numeric(people_demo_xgb$at_fault)
+y
+
+x <- people_demo_xgb %>% select(-at_fault)
+str(x)
+
+#Convert to dummies
+x <- dummy_cols(x)
+x <- select(x, -c(party_type, party_sex, party_sobriety, race))
+
+
+str(x)
+str(y)
+
+
+#Set params
+params <- list(set.seed = 50, eval_metric = "merror", objective = "multi:softprob", num_class = 2)
+
+
+#Run xgboost
+demo_model <- xgboost(data = as.matrix(x),
+                      label = y,
+                      params = params,
+                      nrounds = 10,
+                      verbose = 1)
+
+#Shap values
+xgb.plot.shap(data = as.matrix(x),
+              model = demo_model,
+              top_n = 5)
+                      
+                      
+```
+
