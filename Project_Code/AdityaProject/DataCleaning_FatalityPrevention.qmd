@@ -11,8 +11,14 @@
 library(readr)
 library(dplyr)
 library(janitor)
-library(forcats)
 library(ggplot2)
+library(caTools)
+library(downloader)
+library(FNN)
+library(readxl)
+library(shapr)
+library(caret)
+library(randomForest)
 
 getwd()
 
@@ -34,7 +40,7 @@ str(traffic)
 
 
 
-accident_information <- select(traffic, c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity))
+accident_information <- select(traffic, c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, stwd_vehicle_type, inattention, vehicle_autonomous, at_fault, collision_severity))
 
 
 accident_information
@@ -135,7 +141,7 @@ accident_information <- filter(accident_information, party_age > 0)
 
 accident_information
 
-CHIS_fatality <- lapply(accident_information[,-c(5, 12,13, 23)], function(x) chisq.test(table(accident_information[,23], factor(x))))
+CHIS_fatality <- lapply(accident_information[,-c(5, 12, 13, 23)], function(x) chisq.test(table(accident_information[,23], factor(x))))
 
 do.call(rbind, CHIS_fatality) [, c(1,3)]
 ```
@@ -145,7 +151,7 @@ do.call(rbind, CHIS_fatality) [, c(1,3)]
 #check if any bad data in party_age
 
 
-accident_information_changed <- accident_information
+accident_information_changed <- select(accident_information, -inattention)
 
 
 accident_information_changed
@@ -173,18 +179,21 @@ accident_information_changed$at_fault <- replace(accident_information_changed$at
 accident_information_changed$at_fault <- as.numeric(accident_information_changed$at_fault)
 
 
-accident_information_changed <- dummy_cols(accident_information_changed[-24])
-
-accident_information_changed <- select(accident_information_changed,-c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, inattention, vehicle_autonomous))
-
-
-accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Medical", 1)
-accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Other Visible)", 2)
-accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Complaint of Pain)", 3)
-accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Severe)", 4)
-accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Fatal", 5)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Medical", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Other Visible)", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Complaint of Pain)", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Severe)", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Fatal", 1)
 
 accident_information_changed$collision_severity <- as.numeric(accident_information_changed$collision_severity)
+
+
+accident_information_changed <- dummy_cols(accident_information_changed)
+
+accident_information_changed <- select(accident_information_changed,-c(month, day_of_week, time_cat, weather_1, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, party_type, party_sex, party_age, party_sobriety, race, vehicle_autonomous))
+
+
+
 
 #Medical - 1
 #Injury (Other Visible) - 2
@@ -194,5 +203,50 @@ accident_information_changed$collision_severity <- as.numeric(accident_informati
 
 accident_information_changed
 
+```
+
+
+```{r}
+standardized_accident_information_changed <- as.data.frame(lapply(accident_information_changed[,], normalize))
+
+standardized_accident_information_changed
+
+
+
+set.seed(1000)
+
+
+fatal_split <- sample.split(standardized_accident_information_changed$collision_severity)
+
+train_fatal <- subset(standardized_accident_information_changed, fatal_split == T)
+test_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
+
+
+
+#Determining the k
+
+k_num_fatal <- as.integer(sqrt(nrow(test_fatal)))
+k_num_fatal
+
+
+
+fatal_model <- knn(train = train_fatal, test = test_fatal, cl = train_fatal$collision_severity, k = k_num_fatal)
+fatal_model
+
+
+actual_fatal_vals <- factor(test_fatal$collision_severity)
+actual_fatal_vals
+
+f1_score_fatal <- confusionMatrix(factor(fatal_model), actual_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal
+
+
+
+fatal_confusion_matrix <- table(test_fatal$collision_severity, fatal_model)
+fatal_confusion_matrix
+
+fatal_accuracy <- sum(diag(fatal_confusion_matrix))/sum(fatal_confusion_matrix)
+fatal_accuracy
 ```
 
