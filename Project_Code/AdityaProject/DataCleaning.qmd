@@ -39,7 +39,7 @@ getwd()
 
 
 #Step 1: Read the CSV file
-traffic <- read.csv("Project_Code/Data/data_traffic.csv")
+
 
 
 str(traffic)

@@ -1,0 +1,198 @@
+
+
+# Goal: Predict if certain conditions causing an accident will result in fatality so that preventive measures can be determined to avoid such fatality. 
+
+#predict collision_severity
+
+
+```{r}
+
+#install.packages("readr")
+library(readr)
+library(dplyr)
+library(janitor)
+library(forcats)
+library(ggplot2)
+
+getwd()
+
+
+#Step 1: Read the CSV file
+traffic <- read.csv("Project_Code/Data/data_traffic.csv")
+
+str(traffic)
+
+```
+
+
+```{r}
+
+
+#Step 1
+
+#Need to identify which conditions lead to accidents where party is at fault
+
+
+
+accident_information <- select(traffic, c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity))
+
+
+accident_information
+
+```
+```{r}
+
+#Step 2 - Data cleaning and visualization
+
+# #check if any bad data in accident_year
+# # observation - No bad data. Data ranges from 2019 - 2024
+# count(accident_information, accident_year)
+# #Bar graph by year
+# ggplot(data = accident_information, aes(x=accident_year)) + geom_bar()
+# #Observation - Clearly during covid accidents were down, but with lockdown being lifted, accidents increasing with each year.
+# 
+# 
+# # #check if any bad data in month
+# count(accident_information, month)
+# # #observation - No bad data. Data ranges through various months. Most accidents during winter/rainy months. Lowest accident rates in April, May. Accidents start picking up from Sep through March.Highest in October.
+# # #Bar graph by month
+# ggplot(data = accident_information, aes(x = fct_infreq(month))) + geom_bar()
+# 
+# 
+# #check if any bad data in day_of_week
+# # observation - There are 8 blanks
+# accident_information <- subset(accident_information, accident_information$day_of_week != "")
+# count(accident_information, day_of_week)
+# #ggplot(data = accident_information, aes(x = fct_infreq(day_of_week))) + geom_bar()
+# 
+# x = as.data.frame(table(accident_information$day_of_week))
+# x$percent = round(100*x$Freq/sum(x$Freq), digits = 1)
+# x$label = paste(x$Var1," (", x$percent,"%)", sep = "")
+# 
+# pie(x$Freq, labels = x$label, main = "Accidents % by day of the week", col= rainbow(length(x) ))
+# 
+# 
+# 
+# 
+# #check if any bad data in time_cat
+# #observation - There are 3 blanks.
+# accident_information <- subset(accident_information, accident_information$time_cat != "")
+# count(accident_information, time_cat)
+# ggplot(data = accident_information, aes(x = fct_infreq(time_cat))) + geom_bar()
+# 
+# #check if any bad data in weather_1
+# # observation - No bad data. Interestingly around 85% of accidents are happening in clear weather
+# count(accident_information, weather_1)
+# 
+# # #check if any bad data in distance
+# # # observation - No bad data. Additionally max collisions are at 0 distance.
+# count(accident_information, distance)
+# 
+# #check if any bad data in type_of_collision
+# # observation - No bad data.
+# count(accident_information, type_of_collision)
+
+
+
+```
+```{r}
+# #accident_information <- select(accidents_party_at_fault, c(accident_year, month, day_of_week, time_cat, primary_rd, secondary_rd, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting,intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race,vehicle_year, vz_pcf_description,inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity))
+# 
+# #check if any bad data in ped_action
+# # observation - No bad data.
+# count(accident_information, ped_action)
+# 
+# #check if any bad data in road_surface
+# # observation - No bad data.
+# count(accident_information, road_surface)
+# 
+# 
+# #check if any bad data in road_cond_1
+# # observation - No bad data.
+# count(accident_information, road_cond_1)
+# 
+# #check if any bad data in lighting
+# # observation - No bad data.
+# count(accident_information, lighting)
+# 
+# 
+# #check if any bad data in intersection
+# # observation - No bad data.
+# count(accident_information, intersection)
+# 
+# #check if any bad data in number_killed
+# # observation - No bad data.
+# count(accident_information, number_killed)
+
+
+
+
+
+```
+
+```{r}
+accident_information <- filter(accident_information, party_age > 0)
+
+accident_information
+
+CHIS_fatality <- lapply(accident_information[,-c(5, 12,13, 23)], function(x) chisq.test(table(accident_information[,23], factor(x))))
+
+do.call(rbind, CHIS_fatality) [, c(1,3)]
+```
+
+
+```{r}
+#check if any bad data in party_age
+
+
+accident_information_changed <- accident_information
+
+
+accident_information_changed
+
+
+accident_information_changed <- accident_information_changed %>%
+  mutate(Passenger = ifelse(grepl("Passenger", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pedestrian = ifelse(grepl("Pedestrian", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Motorcycle = ifelse(grepl("Motorcycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Terrain = ifelse(grepl("Terrain|Dune", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Bicycle = ifelse(grepl("Bicycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Zip_Scooter = ifelse(grepl("Zip|Scooter", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pickup = ifelse(grepl("Pickup", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Police = ifelse(grepl("Police", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Public = ifelse(grepl("Public", accident_information_changed$stwd_vehicle_type), 1, 0),
+         SUV = ifelse(grepl("Sport Utility Vehicle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Unknown = ifelse(grepl("Unknown", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", accident_information_changed$stwd_vehicle_type), 1, 0)) %>%
+  select(-stwd_vehicle_type)
+
+accident_information_changed$at_fault <- replace(accident_information_changed$at_fault, accident_information_changed$at_fault == "No", 0)
+accident_information_changed$at_fault <- replace(accident_information_changed$at_fault, accident_information_changed$at_fault == "Yes", 1)
+
+accident_information_changed$at_fault <- as.numeric(accident_information_changed$at_fault)
+
+
+accident_information_changed <- dummy_cols(accident_information_changed[-24])
+
+accident_information_changed <- select(accident_information_changed,-c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, inattention, vehicle_autonomous))
+
+
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Medical", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Other Visible)", 2)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Complaint of Pain)", 3)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Severe)", 4)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Fatal", 5)
+
+accident_information_changed$collision_severity <- as.numeric(accident_information_changed$collision_severity)
+
+#Medical - 1
+#Injury (Other Visible) - 2
+#Injury (Complaint of Pain) - 3
+#Injury (Severe) - 4
+#Fatal - 5
+
+accident_information_changed
+
+```
+
