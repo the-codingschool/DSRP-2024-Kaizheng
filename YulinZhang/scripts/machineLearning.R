@@ -9,9 +9,9 @@ library(stringr)
 
 ## Helper functions
 group_by_age <- function(data) {
-  return(data |>
-           group_by(party_age) |>
-           summarize(mean_cas = mean(number_injured + number_killed)))
+  data <<- data |>
+    group_by(party_age) |>
+    summarize(mean_cas = mean(total_cas))
 }
 
 graph_data <- function(data, subtitle) {
@@ -36,10 +36,10 @@ ggplot(popu, aes(x = party_age)) +
     stat = "bin",
     aes(label = percent(after_stat(count) / sum(after_stat(count)), accuracy = 0.01)),
     vjust = -0.5,
-    breaks = seq(0, 120, 10)
+    breaks = seq(0, 110, 10)
   ) +
   scale_fill_gradient(low = "purple", high = "orange") +
-  scale_x_continuous(breaks = seq(0, 120, 10)) +
+  scale_x_continuous(breaks = seq(0, 110, 10)) +
   labs(title = "Distribution of Population by Ages")
 
 
@@ -62,14 +62,24 @@ plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
 ## Split the data into dark (merge them) and light condition
 table(popu$lighting)
 ## Too few dark data points, have to merge
-dark_data <- group_by_age(filter(popu, str_detect(lighting, "Dark|Dusk")))
-light_data <- group_by_age(filter(popu, lighting == "Daylight"))
+dark_data <- popu |>
+  filter(str_detect(lighting, "Dark|Dusk")) |>
+  mutate(total_cas = number_injured + number_killed)
+
+light_data <- popu |>
+  filter(lighting == "Daylight") |>
+  mutate(total_cas = number_injured + number_killed)
+
+nrow(dark_data)
+nrow(light_data)
 
 run_rlr = function(data, lgh) {
   ## Split the data into training and testing datasets (80% : 20%)
-  split <- sample.split(data$mean_cas, SplitRatio = 0.8)
-  train_data <- subset(data, split == T)
-  test_data <- subset(data, split == F)
+  split <- sample.split(data$total_cas, SplitRatio = 0.7)
+  train_data <- group_by_age(subset(data, split == T))
+  test_data <- group_by_age(subset(data, split == F))
+  print(nrow(train_data))
+  print(nrow(test_data))
   
   ## Train and test the robust linear regression model
   ## RLM can diminish the impacts of the outliers by
@@ -78,20 +88,20 @@ run_rlr = function(data, lgh) {
   pred <- predict(rlr_model, newdata = test_data)
   
   ## Print the performance of model
-  mse <- mean((test_data$mean_cas - pred) ^ 2)
-  mae <- mean(abs(test_data$mean_cas - pred))
+  Y <- test_data$mean_cas
+  mse <- mean((Y - pred)^2)
+  mae <- mean(abs(Y - pred))
   
   ## Low R-square due to outliers
-  Y <- test_data$mean_cas
   r_sq <- 1 - sum((Y - pred)^2) / sum((Y - mean(Y))^2)
   
-  cat("Mean Squared Error:", mse,
-      "\nMean Absolute Error:", mae,
-      "\nR-Squared:", r_sq)
+  cat("Mean Squared Error:", signif(mse, 3),
+      "\nMean Absolute Error:", signif(mae, 3),
+      "\nR-Squared:", signif(r_sq, 3))
   cat("\nOn average, predictions are off from the actual casualties by",
-      mae,
+      signif(mae, 3),
       "people.")
-  
+
   return(ggplot(data, aes(x = party_age, y = mean_cas)) +
            geom_point() +
            geom_smooth(method = MASS::rlm) +
