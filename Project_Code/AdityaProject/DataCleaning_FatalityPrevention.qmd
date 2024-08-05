@@ -216,10 +216,12 @@ standardized_accident_information_changed
 set.seed(1000)
 
 
-fatal_split <- sample.split(standardized_accident_information_changed$collision_severity)
+fatal_split <- sample.split(standardized_accident_information_changed$collision_severity, SplitRatio = 0.8)
 
 train_fatal <- subset(standardized_accident_information_changed, fatal_split == T)
 test_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
+
+train_fatal
 
 
 

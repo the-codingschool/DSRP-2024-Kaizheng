@@ -39,7 +39,7 @@ getwd()
 
 
 #Step 1: Read the CSV file
-
+count(traffic, intersection)
 
 
 str(traffic)
