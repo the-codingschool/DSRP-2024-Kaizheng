@@ -9,14 +9,14 @@ library(stringr)
 
 ## Helper functions
 group_by_age <- function(data) {
-  data <<- data |>
-    group_by(party_age) |>
-    summarize(mean_cas = mean(total_cas))
+  return(data |>
+           group_by(driver_age) |>
+           summarize(mean_cas = mean(number_injured + number_killed)))
 }
 
 graph_data <- function(data, subtitle) {
   return(
-    ggplot(data, aes(x = party_age, y = mean_cas)) +
+    ggplot(data, aes(x = driver_age, y = mean_cas)) +
       geom_point() +
       labs(subtitle = subtitle,
            x = "Party Age",
@@ -27,10 +27,11 @@ graph_data <- function(data, subtitle) {
 popu <- data |>
   drop_na(party_age, number_injured, number_killed) |>
   ## Only focus on driver's data to eliminate irrelevant data points
-  filter(party_age > 0, party_type == "Driver")
+  filter(party_age > 0, party_type == "Driver") |>
+  rename(driver_age = party_age)
 
-## Extremely few data points <10-years-old and >90-yearsold
-ggplot(popu, aes(x = party_age)) +
+#setNames## Extremely few data points <10-years-old and >90-yearsold
+ggplot(popu, aes(x = driver_age)) +
   geom_histogram(binwidth = 10, boundary = 0, aes(fill = after_stat(count))) +
   geom_text(
     stat = "bin",
@@ -44,11 +45,11 @@ ggplot(popu, aes(x = party_age)) +
 
 
 ## Remove outliers
-h_lim <- xlim(range(popu$party_age))
+h_lim <- xlim(range(popu$driver_age))
 v_lim <- ylim(1, 2)
 
 before <- graph_data(group_by_age(popu), "With Outliers")
-popu <- filter(popu, party_age > 15, party_age < 75)
+popu <- filter(popu, driver_age > 15, driver_age < 75)
 after <- graph_data(group_by_age(popu), "Without Outliers")
 gphs <- plot_grid(before + h_lim + v_lim,
                   after + h_lim + v_lim,
@@ -62,31 +63,28 @@ plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
 ## Split the data into dark (merge them) and light condition
 table(popu$lighting)
 ## Too few dark data points, have to merge
-dark_data <- popu |>
-  filter(str_detect(lighting, "Dark|Dusk")) |>
-  mutate(total_cas = number_injured + number_killed)
-
-light_data <- popu |>
-  filter(lighting == "Daylight") |>
-  mutate(total_cas = number_injured + number_killed)
+dark_data <- filter(popu, str_detect(lighting, "Dark|Dusk"))
+light_data <- filter(popu, lighting == "Daylight")
 
 nrow(dark_data)
 nrow(light_data)
 
+
 run_rlr = function(data, lgh) {
   ## Split the data into training and testing datasets (80% : 20%)
-  split <- sample.split(data$total_cas, SplitRatio = 0.7)
+  split <- sample.split(data$number_injured, SplitRatio = 0.7)
   train_data <- group_by_age(subset(data, split == T))
   test_data <- group_by_age(subset(data, split == F))
+  
   print(nrow(train_data))
   print(nrow(test_data))
   
   ## Train and test the robust linear regression model
   ## RLM can diminish the impacts of the outliers by
   ## assigning them lower weights than non-outliers
-  rlr_model <- rlm(mean_cas ~ party_age, data = train_data)
+  rlr_model <- rlm(mean_cas ~ driver_age, data = train_data)
   pred <- predict(rlr_model, newdata = test_data)
-  
+
   ## Print the performance of model
   Y <- test_data$mean_cas
   mse <- mean((Y - pred)^2)
@@ -97,12 +95,13 @@ run_rlr = function(data, lgh) {
   
   cat("Mean Squared Error:", signif(mse, 3),
       "\nMean Absolute Error:", signif(mae, 3),
-      "\nR-Squared:", signif(r_sq, 3))
+      "\nR-Squared:", signif(r_sq, 3),
+      "\nConfidence interval:", confint.default(rlr_model, "driver_age", level = 0.95))
   cat("\nOn average, predictions are off from the actual casualties by",
       signif(mae, 3),
       "people.")
 
-  return(ggplot(data, aes(x = party_age, y = mean_cas)) +
+  return(ggplot(test_data, aes(x = driver_age, y = mean_cas)) +
            geom_point() +
            geom_smooth(method = MASS::rlm) +
            stat_poly_eq(method = MASS::rlm,
@@ -118,8 +117,11 @@ run_rlr = function(data, lgh) {
 dark_gph <- run_rlr(dark_data, "Dark/Dusk")
 light_gph <- run_rlr(light_data, "Daylight")
 
-h_lim <- xlim(range(popu$party_age))
-v_lim <- ylim(range(c(dark_data$mean_cas, light_data$mean_cas)))
+dark_cas <- group_by_age(dark_data)$mean_cas
+light_cas <- group_by_age(light_data)$mean_cas
+
+h_lim <- xlim(range(popu$driver_age))
+v_lim <- ylim(range(c(dark_cas, light_cas)))
 
 gphs <- plot_grid(dark_gph + h_lim + v_lim,
                   light_gph + h_lim + v_lim,
