@@ -263,6 +263,7 @@ ggplot(data = subset(clean_traffic_data_fatal, !is.na(move_pre_acc_merge)), aes(
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
 labs(x='Movement Prior to Accident',y='Amount of Accidents with Complaint of Pain', title='Effect of Movement on Complaint of Pain in Car Accidents') +
   scale_fill_discrete(name = "Legend") + 
+  geom_text(aes(label = Weight), vjust = -0.2) +
   geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
 
 ```
@@ -275,8 +276,8 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
   labs(x='Movement Prior to Accident',y='Average Number of Casualties', title='Effect of Movement  on Number of Casualties in Car Accidents') +
-  scale_fill_discrete(name = "Legend")
-
+  scale_fill_discrete(name = "Legend") +
+  stat_summary(fun = mean, geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, size = 3)
 ```
 
 ```{r}
@@ -285,7 +286,8 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
 labs(x='Movement Prior to Accident',y='Average Number of Injuries', title='Effect of Movement on Number of Injuries in Car Accidents') +
-  scale_fill_discrete(name = "Legend")
+  scale_fill_discrete(name = "Legend") +
+  stat_summary(fun = mean, geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, size = 3)
 
 ```
 
@@ -295,8 +297,7 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
 labs(x='Movement Prior to Accident',y='Average Number of Deaths', title='Effect of Movement  on Number of Deaths in Car Accidents') +
-  scale_fill_discrete(name = "Legend") + 
-  geom_text(size=3, stat='count', aes(label=..count..), vjust=-0.5) 
+  scale_fill_discrete(name = "Legend") 
 ```
 
 ## Saving Mechanism
