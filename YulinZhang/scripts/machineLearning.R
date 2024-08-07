@@ -19,9 +19,13 @@ graph_data <- function(data, subtitle) {
     ggplot(data, aes(x = driver_age, y = mean_cas)) +
       geom_point() +
       labs(subtitle = subtitle,
-           x = "Party Age",
+           x = "Driver's Age",
            y = "Average Casualty"))
 }
+
+prefix <- "Project_Code/Data/"
+data <- read.csv(paste0(prefix, list.files(prefix)))
+head(data)
 
 ## Clean data
 popu <- data |>
@@ -30,7 +34,15 @@ popu <- data |>
   filter(party_age > 0, party_type == "Driver") |>
   rename(driver_age = party_age)
 
-#setNames## Extremely few data points <10-years-old and >90-yearsold
+
+ggplot(group_by_age(popu), aes(x = driver_age, y = mean_cas)) +
+  geom_point() +
+  labs(title = "Average Casualty vs. Driver's Age",
+       x = "Driver's Age",
+       y = "Average Casualty")
+
+
+## Extremely few data points <10-years-old and >90-yearsold
 ggplot(popu, aes(x = driver_age)) +
   geom_histogram(binwidth = 10, boundary = 0, aes(fill = after_stat(count))) +
   geom_text(
@@ -72,7 +84,7 @@ nrow(light_data)
 
 run_rlr = function(data, lgh) {
   ## Split the data into training and testing datasets (80% : 20%)
-  split <- sample.split(data$number_injured, SplitRatio = 0.7)
+  split <- sample.split(data$number_injured, SplitRatio = 0.5)
   train_data <- group_by_age(subset(data, split == T))
   test_data <- group_by_age(subset(data, split == F))
   

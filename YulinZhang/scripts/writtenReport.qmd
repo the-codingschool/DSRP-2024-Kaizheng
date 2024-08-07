@@ -1,34 +1,229 @@
 ---
-title: "Correlations between average casualty in a car accident, driver's age, and lighting condition"
+title: "The relationship between average casualty in a car accident & driver's age under different lighting conditions"
 author: "Yulin Zhang"
 format: html
 editor: visual
 ---
 
-## Quarto
+# Abstract
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+Based on the dataset pertaining to traffic crashes in San Francisco, CA that describe all parties involved, I set out to investigate the relationship between the age of drivers and the average number of people injured or killed in these accidents and whether they differ under dark vs. daylight lighting conditions.
 
-## Running Code
+After dropping unknown values and keeping only data points relevant to drivers, the data was grouped into two datasets based on the lighting conditions. Specifically, 6542 data points during dark and dusk are grouped into one dataset, while 12103 data points during daylight are grouped into another. Each dataset is then aggregated within the group to compute average casualty corresponding to each age.
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+The prediction results of robust linear regression model trained on these datasets suggest that there exists an inverse relationship between average casualty and driver's age in general. It further shows that older drivers tend to cause more harm than young drivers when the car crushes take place during dark or dusk than daylight.
 
-```{r setup, include = false, message = false}
+These findings allow us to estimate the casualty in the crash scene given the driver's age and lighting condition, which are two easily accessible characteristics. With these info, we can send the appropriate level of medical help to the car crash scene immediately.
+
+# Background
+
+Millions in the U.S. live in so-called "ambulance deserts", where medical resources are scarce and ambulance services fail to respond promptly. To mitigate this issue and maximize the efficiency of medical resource allocation, it is critical that the medical center is able to infer the amount of medical help that should be sent to scenes of accident based on the severity of casualties.
+
+This research aims to answer the said task by experimentally determining the relationship between driver's age and average casualty in a car accident under different lighting conditions. The dataset comes from SFPD’s Interim Collision System for 2018 to year-to-date, Crossroads Software Traffic Collision Database (CR) for years 2013-2017, and the Statewide Integrated Transportation Record System (SWITRS) for all years prior to 2013.
+
+# Results
+
+```{r setup}
+#| include: false
+#| message: false
 libs <- c("MASS", "sf", "tidyr", "dplyr", "lubridate", "ggplot2",
           "caTools", "scales", "ggpubr", "gridExtra", "cowplot", "ggpmisc")
+
 for (lib in libs) {
   if (!require(lib, character.only = TRUE))
     install.packages(lib, character.only = TRUE)
   library(lib, character.only = TRUE)
 }
 library(stringr)
+
+group_by_age <- function(data) {
+  return(data |>
+           group_by(driver_age) |>
+           summarize(mean_cas = mean(number_injured + number_killed)))
+}
+
+graph_data <- function(data, subtitle) {
+  return(
+    ggplot(data, aes(x = driver_age, y = mean_cas)) +
+      geom_point() +
+      labs(subtitle = subtitle,
+           x = "Party Age",
+           y = "Average Casualty"))
+}
+
+## Clean data
+  ## Only focus on driver's data to eliminate irrelevant data points
+prefix <- "/Users/frankzhang/Desktop/DSRP_2024/DSRP-2024-Kaizheng/Project_Code/Data/data_traffic.csv"
+data <- read.csv(prefix)
+
+popu <- data |>
+  tidyr::drop_na(party_age, number_injured, number_killed) |>
+  dplyr::filter(party_age > 0, party_type == "Driver") |>
+  dplyr::rename(driver_age = party_age)
 ```
 
-You can add options to executable code like this
+Figure 1 shows the average casualties involved in the car accidents that correspond to different drivers' ages. While the distribution of the data is clustered around a downward sloping line between 15 and 75-years-old, there are clear outliers observed on both ends.
+
+Figure 2, which plots the distribution of data points by ages using a histogram, shows that \<1.4% of the entire dataset belong to drivers younger than 10-years-old or older than 80-years-old. The extremely limited data explains presence of outliers that heavily skew the casualty data.
 
 ```{r}
 #| echo: false
-2 * 2
+#| fig-width: 9
+ggplot(group_by_age(popu), aes(x = driver_age, y = mean_cas)) +
+  geom_point() +
+  labs(title = "Average Casualty vs. Driver's Age",
+       x = "Driver's Age",
+       y = "Average Casualty")
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+#| echo: false
+#| fig-width: 9
+ggplot(popu, aes(x = driver_age)) +
+  geom_histogram(binwidth = 10, boundary = 0, aes(fill = after_stat(count))) +
+  geom_text(
+    stat = "bin",
+    aes(label = percent(after_stat(count) / sum(after_stat(count)), accuracy = 0.01)),
+    vjust = -0.5,
+    breaks = seq(0, 110, 10)
+  ) +
+  scale_fill_gradient(low = "purple", high = "orange") +
+  scale_x_continuous(breaks = seq(0, 110, 10)) +
+  labs(title = "Distribution of Population by Ages",
+      x = "Driver's Age",
+      y = "Number of Accidents")
+```
+
+By referencing both Figure 1 and 2, data points belonging to drivers younger than 15 or older than 75-years-old are identified as outliers and removed before applying any machine learning algorithms.
+
+Figure 3 shows a comparison of the data distribution before and after the removal of outliers. Without outliers, the data follows a cleaner, negatively-correlated trend.
+
+```{r}
+#| echo: false
+#| fig-width: 9
+h_lim <- xlim(range(popu$driver_age))
+v_lim <- ylim(1, 2)
+
+before <- graph_data(group_by_age(popu), "With Outliers")
+popu <- filter(popu, driver_age > 15, driver_age < 75)
+after <- graph_data(group_by_age(popu), "Without Outliers")
+gphs <- plot_grid(before + h_lim + v_lim,
+                  after + h_lim + v_lim,
+                  labels = "AUTO",
+                  ncol = 2)
+title <- ggdraw() + draw_label("Average Casualty vs. Party Age",
+                               fontface = 'bold', size = 18)
+plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
+```
+
+After splitting the dataset into two by lighting conditions and training two robust linear regression models on them, Figure 4 shows the regression lines on the testing data.
+
+The more negative slope of the regression line for dark/dusk data suggests during dark/dusk, drivers' age has more influence on the number of casualties involved in the car accident.
+
+```{r}
+#| echo: false
+#| fig-width: 9
+dark_data <- filter(popu, str_detect(lighting, "Dark|Dusk"))
+light_data <- filter(popu, lighting == "Daylight")
+
+set.seed(1)
+
+run_rlr = function(data, lgh) {
+  ## Split the data into training and testing datasets (80% : 20%)
+  split <- sample.split(data$number_injured, SplitRatio = 0.5)
+  train_data <- group_by_age(subset(data, split == T))
+  test_data <- group_by_age(subset(data, split == F))
+  
+  print(nrow(train_data))
+  print(nrow(test_data))
+  
+  ## Train and test the robust linear regression model
+  ## RLM can diminish the impacts of the outliers by
+  ## assigning them lower weights than non-outliers
+  rlr_model <- rlm(mean_cas ~ driver_age, data = train_data)
+  pred <- predict(rlr_model, newdata = test_data)
+
+  ## Print the performance of model
+  Y <- test_data$mean_cas
+
+  ## Mean square error
+  metric[1] <<- signif(mean((Y - pred)^2), 3)
+  
+  ## Mean absolute error
+  metric[2] <<- signif(mean(abs(Y - pred)), 3)
+  
+  ## Low R-square due to outliers
+  metric[3] <<- signif(1 - sum((Y - pred)^2) / sum((Y - mean(Y))^2), 3)
+  
+  cat("Mean Squared Error:", metric[0],
+      "\nMean Absolute Error:", metric[1],
+      "\nR-Squared:", metric[2],
+      "\nConfidence interval:", confint.default(rlr_model, "driver_age", level = 0.95))
+  ## cat("\nOn average, predictions are off from the actual casualties by",
+  ## signif(metric[2], 3), "people.")
+
+  return(ggplot(test_data, aes(x = driver_age, y = mean_cas)) +
+           geom_point() +
+           geom_smooth(method = MASS::rlm) +
+           stat_poly_eq(method = MASS::rlm,
+                        use_label("eq"),
+                        label.x = "right") +
+           labs(subtitle = lgh,
+                x = "Party Age",
+                y = "Average Casualty"))
+}
+
+metric <- c()
+dark_gph <- run_rlr(dark_data, "Dark/Dusk")
+metric_dark <- metric
+light_gph <- run_rlr(light_data, "Daylight")
+metric_light <- metric
+
+dark_cas <- group_by_age(dark_data)$mean_cas
+light_cas <- group_by_age(light_data)$mean_cas
+
+h_lim <- xlim(range(popu$driver_age))
+v_lim <- ylim(range(c(dark_cas, light_cas)))
+
+gphs <- plot_grid(dark_gph + h_lim + v_lim,
+                  light_gph + h_lim + v_lim,
+                  labels = "AUTO",
+                  ncol = 2)
+title <- ggdraw() +
+  draw_label("Predicted Average Casualty vs. Party Age", 
+             fontface = 'bold', size = 18)
+
+plot_grid(title, gphs, ncol = 1, rel_heights = c(0.1, 1))
+```
+
+To evaluate the models' performance and compare them, a bar graph
+
+Figure 5 shows
+
+```{r}
+#| echo: false
+#| fig-width: 9
+titles <- c("Mean Squared Error",
+            "Mean Absolute Error",
+            "R-Squared")
+
+grids <- vector('list', 3)
+for (i in 1:3) {
+  metric <- data.frame(lgh = c("Dark/Dusk", "Daylight"),
+                       met = c(metric_dark[i], metric_light[i]))
+  plot <- ggplot(metric, aes(x = lgh, y = met)) +
+    geom_col() +
+    labs(title = titles[i],
+         x = '',
+         y = '')
+  grids[[i]] <- plot
+}
+
+plot_grid(plotlist = grids, labels = "AUTO", ncol = 3)
+```
+
+# Discussion
+
+# References
+
+“USM Researchers.” *Millions in U.S. Live in “Ambulance Deserts,”* spectrumlocalnews.com/me/maine/health/2023/06/27/usm-researchers--millions-in-u-s--live-in--ambulance-deserts---putting-lives-at-risk. Accessed 6 Aug. 2024.
