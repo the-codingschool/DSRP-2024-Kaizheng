@@ -159,6 +159,8 @@ chisq_time_data <- time_data %>%
     time_cat %in% c('6:01 am to 10:00 am', '10:01 am to 2:00 pm') ~ 'Morning (6 am to 2 pm)',
     TRUE ~ 'Afternoon/Evening (2 pm to 10pm'
   ))
+nrow(chisq_time_data)
+dim(chisq_time_data)
 head(chisq_time_data)
 # Create a contingency table
 contingency_table <- table(chisq_time_data$collision_severity, chisq_time_data$new_time_cat)
