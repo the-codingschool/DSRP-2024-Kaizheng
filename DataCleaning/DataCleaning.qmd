@@ -1,0 +1,503 @@
+```{r}
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(tidyr)
+library(readr)
+```
+```{r}
+setwd("Project_Code/Data/data_traffic.csv")
+data <- read_csv("Project_Code/Data/data_traffic.csv")
+head(data)
+```
+
+
+things to pay attention to:
+time of collision (24h time)
+common intersection keys (+lat/long)
+common dates (month,day of week)
+weather 1 and 2
+severity and type
+motor vehicle or not
+pedestrian or not
+road surface type
+road conditions
+lighting
+pcf description
+fatalities
+injuries
+party type/at fault
+sex and age
+sobriety/drugs
+air bags, safety equipment
+special info (typically cell phone?)
+autonomous or not
+inattention
+
+
+
+time vs # of accidents
+weather vs # of incidents
+average injuries/fatalities
+
+correlation between sex/age and incidents, and what time different sexes/ages tend to have incidents 
+
+sobriety vs incidents
+whether or not autonomous cars tend to have more accidents
+common intersections
+
+
+
+
+```{r}
+clean_data <- clean_names(data)
+
+
+
+#replaces "Not Stated" or unnecessary statements with NA
+
+#cleans road condition labeling
+clean_data <- rename(clean_data,c('unusual_road_cond_1'='road_cond_1','unusual_road_cond_2'='road_cond_2'))
+
+clean_data <- clean_data |>
+    mutate(unusual_road_cond_1=na_if(unusual_road_cond_1,'No Unusual Condition'),unusual_road_cond_1=na_if(unusual_road_cond_1,'Not Stated'),unusual_road_cond_2=na_if(unusual_road_cond_2,'No Unusual Condition'),unusual_road_cond_2=na_if(unusual_road_cond_2,'Not Stated'))
+
+
+#cleans ped action
+clean_data <- clean_data|>
+    mutate(ped_action=na_if(ped_action,"No Pedestrian Involved"))
+
+#cleans direction
+clean_data <- clean_data |>
+  mutate(direction=na_if(direction,"Not Stated"))
+
+#cleans weather
+clean_data <- clean_data |>
+  mutate(weather_1=na_if(weather_1,"Not Stated"),weather_2=na_if(weather_2,"Not Stated"))
+
+#cleans collision type
+clean_data <- clean_data |>
+  mutate(type_of_collision=na_if(type_of_collision,"Not Stated"))
+
+#cleans motor vehicle involvement
+clean_data <- clean_data |> 
+  mutate(mviw=na_if(mviw,"Not Stated"))
+
+
+#cleans control device
+clean_data <- clean_data |>
+  mutate(control_device=na_if(control_device,"None"))
+
+clean_data <- clean_data |>
+  mutate(lighting=na_if(lighting,"Not Stated"))
+
+clean_data <- clean_data |>
+  m)
+
+#clean_data <- clean_data |>
+ # mutate(party_age=na_if(party_age<0,TRUE))
+
+#clean_data<- clean_data |>
+#  mutate(party_age, case_when(
+#    party_age<1 ~ 500,
+#    .default = clean_data$party_age
+#  ))
+
+#clean_data <- clean_data |>
+#  mutate(party_age=na_if(party_age,500#))
+
+#clean_age_data<- clean_data |>
+#  mutate(party_age,party_age = case_when(
+#    party_age < 16 ~ NA,
+#    .default=party_age
+#  ))
+
+
+print(clean_data)
+
+```
+
+
+
+
+```{r}
+ggplot(clean_data,aes(party_age,na.rm=TRUE))+geom_histogram()+xlim(16,101)+labs(title="Age of All Parties Involved in Incidents")
+
+#clones the party age column, replacing the value with NA if atf
+age_at_fault <- select(clean_data, party_age,at_fault)
+
+age_at_fault <- age_at_fault |>
+  mutate(party_age,party_age=case_when(
+    at_fault=='Yes' ~ party_age,
+    .default = NA
+  ))
+
+
+print(age_at_fault)
+ggplot(age_at_fault,aes(party_age,na.rm=TRUE))+geom_histogram()+xlim(16,101)+labs(title="Age of Parties At Fault")
+ggplot(age_at_fault,aes(party_age,na.rm=TRUE))+geom_boxplot()+xlim(16,101)+labs(title="Age of Parties At Fault")
+
+at_fault_median = median(age_at_fault$party_age,na.rm=TRUE)
+at_fault_median
+
+```
+```{r}
+#age_chart <- clean_data |>
+#  select(party_age) |>
+#    mutate(party_age,under_30=case_when(
+##      party_age<30 ~ 'Under 30',
+#      .default='Above 30'
+#    ))
+
+age_chart <- clean_data |>
+  select(party_age) |>
+    mutate(party_age,age_range=case_when(
+      party_age<30 & party_age>16 ~ 'Under 30',
+      party_age>30 & party_age<50 ~ 'Between 30 and 50',
+      party_age>=50 ~ 'Over 50',
+      .default= 'Not Given'
+    ))
+
+age_chart
+pie(table(age_chart$age_range))
+ggplot(age_chart,aes(party_age))+geom_boxplot()+xlim(16,101)
+
+
+
+
+
+#we can see that the majority of drivers in this dataset are not at fault
+#under 30, it is about 50/50
+#between 30/50 and over 50 is very similar, with the majority being not at fault
+
+
+clean_age_data<- clean_data |>
+  mutate(party_age,party_age = case_when(
+    party_age < 16 ~ NA,
+    .default=party_age
+  ))
+print(clean_age_data)
+
+age_median = median(clean_age_data$party_age,na.rm=TRUE)
+print(age_median)
+#median=39
+```
+
+
+
+```{r}
+#percentage of at fault drivers under 30
+under_30 <- clean_data |>
+  select(party_age,at_fault) |>
+    mutate(party_age,under_30=case_when(
+      at_fault=='Yes' & party_age<30 & party_age>16 ~ 'At Fault',
+      at_fault=='No' & party_age<30 & party_age>16 ~ 'Not At Fault',
+      .default=NA
+    ))
+
+
+
+
+#percentage of at fault drivers aged 30-50
+between_30_and_50 <- clean_data |>
+  select(party_age,at_fault)|>
+    mutate(party_age,between_30_and_50=case_when(
+      at_fault=='Yes' & party_age<50 & party_age>30 ~ 'At Fault',
+      at_fault=='No' & party_age<50 & party_age>30 ~ 'Not At Fault',
+      .default=NA
+    ))
+
+#percentage of at fault drivers over 50
+over_50 <- clean_data |>
+  select(party_age,at_fault)|>
+    mutate(party_age,over_50=case_when(
+      at_fault=='Yes' & party_age>50 ~ 'At Fault',
+      at_fault=='No' & party_age>50 ~ 'Not At Fault',
+      .default=NA
+    ))
+
+#percentage at fault for everyone
+pie(table(clean_data$at_fault),na.rm=TRUE,main="Drivers At Fault")
+
+
+#pie charts of different age groups
+pie(table(under_30$under_30),na.rm=TRUE,main="Drivers Under 30")
+pie(table(between_30_and_50$between_30_and_50),na.rm=TRUE,main="Drivers Between 30 and 50")
+pie(table(over_50$over_50),na.rm=TRUE,main="Drivers Over 50")
+```
+
+
+
+age and time
+time = lighting
+young people at night vs older people
+
+come up with such question
+do statistical analysis
+go beyond, come up with reasoning
+why
+based on that, is there anything we can do to prevent this
+
+
+
+
+
+take the percentage between the drivers in the dataset and the drivers at fault
+compare different ages: it seems like 30-50yo are causing most accidents
+but there is also most likely more data from that age group
+perecentages would give us better results
+
+
+```{r}
+#all the lighting conditions for the accidents in dataset
+pie(table(clean_data$lighting),na.rm=TRUE)
+
+#drivers at fault during dark lighting (w/streetlights)
+at_fault_dark <- clean_data |>
+  select(at_fault,lighting)|>
+    mutate(lighting,at_fault_dark=case_when(
+      at_fault=="Yes" & lighting=="Dark - Street Lights" ~ "At Fault",
+      at_fault=="No" & lighting=="Dark - Street Lights" ~ "Not At Fault",
+      .default=NA
+    ))
+
+#drivers at fault during daytime lighting
+at_fault_day <- clean_data |>
+  select(at_fault,lighting) |>
+    mutate(lighting,at_fault_day=case_when(
+      at_fault=="Yes" & lighting=="Daylight" ~ "At Fault",
+      at_fault=="No"  & lighting=="Daylight" ~ "Not At Fault",
+      .default=NA
+    ))
+
+#drivers at fault during other times - no Street Lights or Dusk
+
+
+
+
+
+
+
+
+
+at_fault_dark <- clean_data |>
+  select(at_fault,lighting)|>
+    mutate(lighting,at_fault_dark=case_when(
+      at_fault=="Yes" & lighting=="Dark - Street Lights" ~ "At Fault",
+      at_fault=="No" & lighting=="Dark - Street Lights" ~ "Not At Fault",
+      .default=NA
+    ))
+
+at_fault_dawn_dusk <- clean_data |>
+  select(at_fault,lighting)|>
+    mutate(lighting,at_fault_dawn_dusk=case_when(
+      at_fault=="Yes" & lighting == "Dusk - Dawn" ~ "At Fault",
+      at_fault=="No" & lighting == "Dusk - Dawn" ~ "Not at Fault",
+      .default=NA
+    ))
+
+
+at_fault_day <- na.omit(at_fault_day)
+at_fault_dark <- na.omit(at_fault_dark)
+at_fault_dawn_dusk <- na.omit(at_fault_dawn_dusk)
+
+at_fault_day
+
+
+pie(table(at_fault_dark$at_fault_dark),main="Drivers At Fault during Dark Lighting with Streetlights",labels=paste(names(table(at_fault_dark$at_fault_dark)), "\n", table(at_fault_dark$at_fault_dark),sep=""))
+pie(table(at_fault_day$at_fault_day),main="Drivers At Fault during Daylight",labels=paste(names(table(at_fault_day$at_fault_day)), "\n", table(at_fault_day$at_fault_day),sep=""))
+pie(table(at_fault_dawn_dusk$at_fault_dawn_dusk),main="Drivers At Fault during Dawn or Dusk",labels=paste(names(table(at_fault_dawn_dusk$at_fault_dawn_dusk)), "\n", table(at_fault_dawn_dusk$at_fault_dawn_dusk),sep=""))
+
+```
+
+
+
+analyzing age and time
+
+
+Under 30 Years Old
+```{r}
+day_fault_under_30 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,day_fault_under_30=case_when(
+      lighting=="Daylight" & party_age<30 & party_age>16 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Daylight" & party_age<30 & party_age>16 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dark_fault_under_30 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dark_fault_under_30=case_when(
+      lighting=="Dark - Street Lights" & party_age<30 & party_age>16 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dark - Street Lights" & party_age<30 & party_age>16 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dawn_dusk_under_30 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dawn_dusk_under_30=case_when(
+      lighting=="Dusk - Dawn" & party_age<30 & party_age>16 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dusk - Dawn" & party_age<30 & party_age>16 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+
+
+day_fault_under_30 <- na.omit(day_fault_under_30)
+dark_fault_under_30 <- na.omit(dark_fault_under_30)
+dawn_dusk_under_30 <- na.omit(dawn_dusk_under_30)
+
+
+pie(table(day_fault_under_30$day_fault_under_30),main="Drivers under 30 During Daylight", labels=paste(names(table(day_fault_under_30$day_fault_under_30)),'\n',table(day_fault_under_30$day_fault_under_30),sep=""))
+pie(table(dark_fault_under_30$dark_fault_under_30),main="Drivers under 30 During Dark Lighting with Streetlights", labels=paste(names(table(dark_fault_under_30$dark_fault_under_30)),'\n',table(dark_fault_under_30$dark_fault_under_30),sep=""))
+pie(table(dawn_dusk_under_30$dawn_dusk_under_30),main="Drivers under 30 During Dawn or Dusk",labels=paste(names(table(dawn_dusk_under_30$dawn_dusk_under_30)),'\n',table(dawn_dusk_under_30$dawn_dusk_under_30),sep=""))
+
+```
+
+
+
+Between 30 and 50
+```{r}
+day_fault_30_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,day_fault_30_50=case_when(
+      lighting=="Daylight" & party_age<50 & party_age>=30 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Daylight" & party_age<50 & party_age>=30 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dark_fault_30_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dark_fault_30_50=case_when(
+      lighting=="Dark - Street Lights" & party_age<50 & party_age>=30 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dark - Street Lights" & party_age<50 & party_age>=30 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dawn_dusk_30_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dawn_dusk_30_50=case_when(
+      lighting=="Dusk - Dawn" & party_age<50 & party_age>=30 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dusk - Dawn" & party_age<50 & party_age>=30 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+
+
+day_fault_30_50 <- na.omit(day_fault_30_50)
+dark_fault_30_50 <- na.omit(dark_fault_30_50)
+dawn_dusk_30_50 <- na.omit(dawn_dusk_30_50)
+
+
+  pie(table(day_fault_30_50$day_fault_30_50),main="Drivers Between 30 and 50 During Daylight", labels=paste(names(table(day_fault_30_50$day_fault_30_50)),'\n',table(day_fault_30_50$day_fault_30_50),sep=""))
+pie(table(dark_fault_30_50$dark_fault_30_50),main="Drivers Between 30 and 50 During Dark Lighting with Streetlights", labels=paste(names(table(dark_fault_30_50$dark_fault_30_50)),'\n',table(dark_fault_30_50$dark_fault_30_50),sep=""))
+pie(table(dawn_dusk_30_50$dawn_dusk_30_50),main="Drivers Between 30 and 50 During Dawn or Dusk",labels=paste(names(table(dawn_dusk_under_30$dawn_dusk_under_30)),'\n',table(dawn_dusk_30_50$dawn_dusk_30_50),sep=""))
+```
+
+
+
+Over 50
+```{r}
+day_fault_over_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,day_fault_over_50=case_when(
+      lighting=="Daylight" & party_age>=50 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Daylight" & party_age>=50 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dark_fault_over_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dark_fault_over_50=case_when(
+      lighting=="Dark - Street Lights" & party_age>=50 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dark - Street Lights" & party_age>=50 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+dawn_dusk_over_50 <- clean_data |>
+  select(party_age,lighting,at_fault) |>
+    mutate(party_age,dawn_dusk_over_50=case_when(
+      lighting=="Dusk - Dawn" & party_age>=50 & at_fault=="Yes" ~ "At Fault",
+      lighting=="Dusk - Dawn" & party_age>=50 & at_fault=="No" ~ "Not At Fault",
+      .default=NA
+    ))
+
+
+
+day_fault_over_50 <- na.omit(day_fault_over_50)
+dark_fault_over_50 <- na.omit(dark_fault_over_50)
+dawn_dusk_over_50 <- na.omit(dawn_dusk_over_50)
+
+
+pie(table(day_fault_over_50$day_fault_over_50),main="Drivers over 50 During Daylight", labels=paste(names(table(day_fault_over_50$day_fault_over_50)),'\n',table(day_fault_over_50$day_fault_over_50),sep=""))
+
+pie(table(dark_fault_over_50$dark_fault_over_50),main="Drivers over 50 During Dark Lighting with Streetlights", labels=paste(names(table(dark_fault_over_50$dark_fault_over_50)),'\n',table(dark_fault_over_50$dark_fault_over_50),sep=""))
+
+
+pie(table(dawn_dusk_over_50$dawn_dusk_over_50),main="Drivers over 50 During Dawn or Dusk",labels=paste(names(table(dawn_dusk_over_50$dawn_dusk_over_50)),'\n',table(dawn_dusk_over_50$dawn_dusk_over_50),sep=""))
+```
+
+
+
+
+
+
+
+
+
+
+chi-squared
+```{r}
+at_fault_age <- clean_age_data|>
+  select(at_fault,party_age,lighting)|>
+    mutate(party_age,at_fault_age=case_when(
+      at_fault=="Yes" ~ party_age,
+      .default=NA
+    ))
+age_daylight_table <- table(at_fault_age$at_fault_age,at_fault_age$lighting)
+
+chisq_results <- chisq.test(age_daylight_table)
+
+chisq_results
+chisq_results$p.value
+chisq_results$residuals
+
+critical_value=qchisq(p=0.05,df=332,lower.tail=FALSE)
+critical_value
+
+ggplot(at_fault_age,aes(x=lighting,fil=at_fault_age))+
+  geom_bar(position="dodge")+
+  labs(title="Drivers At Fault During Different Lighting Conditions",
+        x="Lighting Conditions",
+        y="Number of Accidents"
+         )
+#x^2 is higher than the critical value,so it proves my alternate hypothesis, that lighting affects the number of collisions
+  
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+test_set <- select(clean_data,lighting,at_fault)
+test_set
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
