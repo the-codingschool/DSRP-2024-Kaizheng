@@ -1,0 +1,65 @@
+Title: Later times at night correspond with more severe car crashes.
+
+Abstract:
+My research question was aimed at determining if time had a significant effect on the severity of car crashes. In order to best tackle this problem, I used the "Time_cat" column which gave the category of time that a car crash happened and also the "collision_severity" column which gave the collision severity. I made a table with these two categorical values and had 31,981 data points to work with. A chi-square test was then used to determine if time had a significant effect on the severity of car crashes, where a low p-value signified that time did have a significant effect on the severity of a car crash. I then graphed the overall trend of the time of car crashes and found that fatal car crashes had proportionally more crashes at night than non-fatal car crashes.The main findings of this paper were that time had a significant effect on the severity of a car crash, which supports the practice of driving safer at night, as fatal car crashes are more likely to happen at night than during the day.
+Background:
+The data for this project came from the San Francisco government on their public website called DataSF, where they aim to use data to transform San Francisco. Using their data as a base, I set out to answer the question of if time had a significant effect on the severity of a car crash. This research question has many implications on real life scenarios, since millions of people drive every day, and knowing what times are the most dangerous can be beneficial in influencing drivers to be more careful. I hypothesized that time would have a significant impact on the severity of car crashes, since night-time car crashes tend to be more severe.
+Result:
+First,  I installed necessary libraries and read in the data and cleaned it up to get only the columns that were necessary for the data analysis:
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+library(dplyr)
+library(ggplot2)
+traffic_data <- read.csv("C:/Users/Greem/OneDrive/Documents/data_science_project_2024/DSRP-2024-Kaizheng/data_traffic.csv")
+time_data <- traffic_data |>
+  select("time_cat", "collision_severity") |>
+  filter(collision_severity != "Medical") |>
+  filter(time_cat != "") |>
+  na.omit()
+time_order <- c("6:01 am to 10:00 am", "10:01 am to 2:00 pm", "2:01 pm to 6:00 pm", "6:01 pm to 10:00 pm", "10:01 pm to 2:00 am", "2:01 am to 6:00 am")
+head(time_data)
+```
+Next, I created two plots to visualise the data
+Figure 1: Two plots of the effect of time on collision severities
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+time_data$time_cat <- factor(time_data$time_cat, levels = time_order)
+time_data <- time_data[order(time_data$time_cat), ]
+time_data |>
+  filter(collision_severity %in% c("Fatal", "Injury (Complaint of Pain)")) |>
+  ggplot(aes(x = collision_severity, fill = time_cat)) + geom_bar(position = "dodge") +
+  labs(title = "Effect of time on collision severities", x = "Collision Severity") + guides(fill=guide_legend(title="Time")) + facet_wrap(~ collision_severity, scales = "free")
+```
+The data appears to show that fatal car crashes occur more often at night, but I ran a chi-square test to be sure of it
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+chisq_time_data <- time_data %>%
+  mutate(new_time_cat = case_when(
+    time_cat %in% c('10:01 pm to 2:00 am', '2:01 am to 6:00 am') ~ 'Night (10 pm to 6 am)',
+    time_cat %in% c('6:01 am to 10:00 am', '10:01 am to 2:00 pm') ~ 'Morning (6 am to 2 pm)',
+    TRUE ~ 'Afternoon/Evening (2 pm to 10pm'
+  ))
+# Create a contingency table
+contingency_table <- table(chisq_time_data$collision_severity, chisq_time_data$new_time_cat)
+# Run the chi-squared test
+chi_squared_test <- chisq.test(contingency_table)
+# Print the test results
+print(chi_squared_test)
+# Check the expected counts to ensure they are large enough for the chi-squared test to be valid
+print(chi_squared_test$expected)
+```
+The p-value of below 2.2e-16 shows that that time has a significant effect on the severity of a car crash, so I decided to determine which collision severity was affected by time.
+Figure 2: plot of the overall trend of the severity of a car crash in relation to time.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+chisq_time_data |>
+  filter(collision_severity %in% c("Fatal", "Injury (Complaint of Pain)")) |>
+  ggplot(aes(x = collision_severity, fill = new_time_cat)) + geom_bar(position = "dodge") +
+  labs(title = "Effect of time on collision severities", x = "Collision Severity") + guides(fill=guide_legend(title="Time")) + facet_wrap(~ collision_severity, scales = "free")
+ggplot(chisq_time_data, aes(x = new_time_cat)) + geom_bar() + labs(title = "Number of car crashses at different times", x = "Time", y = "Count")
+```
+Based off of figure two, it appears that non-fatal car crashes follow the trend but fatal car crashes have a unexpectedly high number of night car crashes.
+Discussion:
+From the data and the plots, we can draw the conclusion that time has a significant effect on the severity of a car crash since the chi-squared test resulted in a p-value lower than 0.05. The importance of this conclusion is that it educates drivers in San Francisco that driving at night time is more dangerous than driving in the afternoon or the evening. These results are limited to drivers in San Francisco since the data all came from San Francisco, and attempting to apply these results onto another area or city might not be accurate. The results that we saw make sense, since less people tend to drive at night, which means that traffic is much lighter which allows people to drive much faster as well. Combined with the fact that people tend to be less attentive at night due to tiredness, these fast speeds can result in more fatal car crashes. The next questions to be asked would be to see if the speed of a crash has a significant impact on the severity of a car crash along with expanding the orignial question to different cities to see how these results might differ in another state or even continent. 
+Code and data availability: 
+The data is publicly available from this link: https://data.sfgov.org/Public-Safety/Traffic-Crashes-Resulting-in-Injury-Parties-Involv/8gtc-pjc6/about_data
+Acknowledgements:
+I would like to acknowledge Kaizheng Wang along with the Coding School for helping me learn about data analysis and statistics while also giving me the opportunity to write this research paper with them.
+
