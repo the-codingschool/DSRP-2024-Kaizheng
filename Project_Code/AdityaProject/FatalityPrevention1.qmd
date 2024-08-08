@@ -9,6 +9,7 @@
 
 #install.packages("readr")
 #install.packages("fastDummies")
+#install.packages("ROSE")
 library(readr)
 library(dplyr)
 library(janitor)
@@ -21,6 +22,8 @@ library(shapr)
 library(caret)
 library(randomForest)
 library(fastDummies)
+library(ROSE)
+
 
 getwd()
 
@@ -101,8 +104,9 @@ accident_information <- subset(accident_information, accident_information$time_c
 count(accident_information, weather_1)
 category_count <- table(accident_information$weather_1)
 categories_to_keep <- names(category_count[category_count >= 5])
-accident_information <- accident_information[accident_information$weather_1 %in% categories_to_keep, ]
 
+
+accident_information <- accident_information[accident_information$weather_1 %in% categories_to_keep, ]
 
 # 
 # # #check if any bad data in distance
@@ -230,7 +234,6 @@ accident_information <- accident_information[accident_information$stwd_vehicle_t
 
 
 ```
-
 ```{r}
 accident_information <- filter(accident_information, party_age > 0)
 
@@ -271,7 +274,7 @@ accident_information_changed
 #apply chi squared test
 # all variables being compared are categorical in nature, and in each variable category every value occurs at least 5 times
 
-CHIS_fatality <- lapply(accident_information_changed[,-c(5, 12, 13, 23)], function(x) chisq.test(table(factor(accident_information_changed[,23]), factor(x))))
+CHIS_fatality <- lapply(accident_information_changed[,-c(5, 12, 13, 16, 23)], function(x) chisq.test(table(factor(accident_information_changed[,23]), factor(x))))
 
 # CHIS_fatality
 
@@ -280,32 +283,28 @@ do.call(rbind, CHIS_fatality) [, c(1,2,3)]
 
 
 
-accident_information_changed <- select(accident_information_changed, -inattention)
+accident_information_changed <- select(accident_information_changed, -c(inattention, day_of_week, lighting))
 
 
 accident_information_changed
 
 
-# accident_information_changed <- accident_information_changed %>%
-#   mutate(Passenger = ifelse(grepl("Passenger", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Pedestrian = ifelse(grepl("Pedestrian", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Motorcycle = ifelse(grepl("Motorcycle", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Terrain = ifelse(grepl("Terrain|Dune", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Bicycle = ifelse(grepl("Bicycle", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Zip_Scooter = ifelse(grepl("Zip|Scooter", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Pickup = ifelse(grepl("Pickup", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Police = ifelse(grepl("Police", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Public = ifelse(grepl("Public", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          SUV = ifelse(grepl("Sport Utility Vehicle", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Unknown = ifelse(grepl("Unknown", accident_information_changed$stwd_vehicle_type), 1, 0),
-#          Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", accident_information_changed$stwd_vehicle_type), 1, 0)) %>%
-#   select(-stwd_vehicle_type)
+accident_information_changed <- accident_information_changed %>%
+  mutate(Passenger = ifelse(grepl("Passenger", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pedestrian = ifelse(grepl("Pedestrian", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Motorcycle = ifelse(grepl("Motorcycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Terrain = ifelse(grepl("Terrain|Dune", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Bicycle = ifelse(grepl("Bicycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Zip_Scooter = ifelse(grepl("Zip|Scooter", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pickup = ifelse(grepl("Pickup", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Police = ifelse(grepl("Police", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Public = ifelse(grepl("Public", accident_information_changed$stwd_vehicle_type), 1, 0),
+         SUV = ifelse(grepl("Sport Utility Vehicle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Unknown = ifelse(grepl("Unknown", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", accident_information_changed$stwd_vehicle_type), 1, 0)) %>%
+  select(-stwd_vehicle_type)
 
-accident_information_changed$at_fault <- replace(accident_information_changed$at_fault, accident_information_changed$at_fault == "No", 0)
-accident_information_changed$at_fault <- replace(accident_information_changed$at_fault, accident_information_changed$at_fault == "Yes", 1)
-
-accident_information_changed$at_fault <- as.numeric(accident_information_changed$at_fault)
 
 str(accident_information_changed)
 
@@ -317,63 +316,20 @@ accident_information_changed <- select(accident_information_changed, -c(number_k
 accident_information_changed <- select(accident_information_changed, -at_fault)
 
 
-#Not an improvement
-accident_information_changed <- select(accident_information_changed, -time_cat)
-
-#Not an improvement - but taking out
-accident_information_changed <- select(accident_information_changed, -weather_1)
-
-#Slight improvement
-accident_information_changed <- select(accident_information_changed, -month)
 
 #HUGE improvement
 accident_information_changed <- select(accident_information_changed, -party_age)
 
-#No change really - taking out anyways
-accident_information_changed <- select(accident_information_changed, -road_cond_1)
-
-#Improvement
-accident_information_changed <- select(accident_information_changed, -party_sex)
-
-#Slight improvement
-accident_information_changed <- select(accident_information_changed, -road_surface)
-
-#Improvement
-accident_information_changed <- select(accident_information_changed, -race)
-
-#Did not help
-#accident_information_changed <- select(accident_information_changed, -intersection)
-
 #Huge improvement
 accident_information_changed <- select(accident_information_changed, -distance)
 
-#Improvement but doesn't make sense to take out
-#accident_information_changed <- select(accident_information_changed, -party_sobriety)
 
-#Slight improvement
-accident_information_changed <- select(accident_information_changed, -vehicle_autonomous)
-
-#No change
-accident_information_changed <- select(accident_information_changed, -ped_action)
-
-#Improved more
-accident_information_changed <- select(accident_information_changed, -type_of_collision)
-
-
-#accident_information_changed <- select(accident_information_changed, -party_type)
-
-accident_information_changed <- select(accident_information_changed, -stwd_vehicle_type)
-
-str(accident_information_changed)
+accident_information_changed
 
 
 accident_information_changed <- dummy_cols(accident_information_changed)
 
-accident_information_changed <- select(accident_information_changed,-c(day_of_week, lighting, intersection, party_sobriety, party_type))
-
-
-
-
+accident_information_changed <- select(accident_information_changed,-c(month, time_cat, weather_1, intersection, party_sobriety, party_type, party_sex, road_surface, race, road_cond_1, vehicle_autonomous, ped_action, type_of_collision))
 
 
 accident_information_changed
@@ -398,41 +354,65 @@ set.seed(1000)
 
 standardized_accident_information_changed
 
-fatal_split <- sample.split(standardized_accident_information_changed$collision_severity, SplitRatio = 0.8)
+
+
+fatal_split <- sample.split(standardized_accident_information_changed$collision_severity, SplitRatio = 0.6)
 
 train_fatal <- subset(standardized_accident_information_changed, fatal_split == T)
-test_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
+next_step_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
 
-train_fatal
-test_fatal
+
+valid_split <- sample.split(next_step_fatal$collision_severity, SplitRatio = 0.5)
+
+validation_fatal <- subset(next_step_fatal, valid_split == T)
+testing_fatal <- subset(next_step_fatal, valid_split == F)
+
 
 count(train_fatal, collision_severity)
+
+data(train_fatal)
+balanced_train_fatal <- ovun.sample(collision_severity ~ ., data = train_fatal, method = "over", N=18000)$data
+
+count(balanced_train_fatal, collision_severity)
+
+
+
+train_fatal
+validation_fatal
+testing_fatal
 
 
 #Determining the k
 
-k_num_fatal <- as.integer(sqrt(nrow(test_fatal)))
-k_num_fatal
+k_num_fatal <- as.integer(sqrt(nrow(balanced_train_fatal)))
+k_num_fatal <- k_num_fatal + 1
 
 
+#VALIDATION AND FINE TUNE TEST
+fatal_model_validating <- knn(train = balanced_train_fatal, test = validation_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
+fatal_model_validating
 
-fatal_model <- knn(train = train_fatal, test = test_fatal, cl = train_fatal$collision_severity, k = k_num_fatal)
-fatal_model
 
+validation_fatal_vals <- factor(validation_fatal$collision_severity)
+validation_fatal_vals
 
-actual_fatal_vals <- factor(test_fatal$collision_severity)
-actual_fatal_vals
-
-f1_score_fatal <- confusionMatrix(factor(fatal_model), actual_fatal_vals, mode = "everything", positive = "1")
+f1_score_fatal <- confusionMatrix(factor(fatal_model_validating), validation_fatal_vals, mode = "everything", positive = "1")
 
 f1_score_fatal
 
 
+#FINAL TEST
+fatal_model_testing <- knn(train = balanced_train_fatal, test = testing_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
 
-fatal_confusion_matrix <- table(test_fatal$collision_severity, fatal_model)
-fatal_confusion_matrix
 
-fatal_accuracy <- sum(diag(fatal_confusion_matrix))/sum(fatal_confusion_matrix)
-fatal_accuracy
+testing_fatal_vals <- factor(testing_fatal$collision_severity)
+
+f1_score_fatal_test <- confusionMatrix(factor(fatal_model_testing), testing_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal_test
+
+
+
+
 ```
 
