@@ -1,0 +1,750 @@
+---
+title: "Machine Learning Enabled Data Analysis And Prediction of San Francisco Road Accident Severities Using KNN Algorithm For Effective Traffic Safety Planning"
+format: html
+author: "Aditya Das"
+date: last-modified
+date-format: "[Last Updated on] MMMM, YYYY"
+---
+
+```{r, include=FALSE}
+# Goal: Predict if certain conditions causing an accident will result in fatality so that preventive measures can be determined to avoid such fatality.
+
+#predict collision_severity
+```
+
+```{r chunk-loading-library, include=FALSE}
+#install.packages("tidyverse")
+#install.packages("readr")
+#install.packages("fastDummies")
+#install.packages("ROSE")
+#install.packages("here")
+library(readr)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(caTools)
+library(downloader)
+library(FNN)
+library(readxl)
+library(shapr)
+library(caret)
+library(randomForest)
+library(fastDummies)
+library(ROSE)
+library(forcats)
+library(here)
+
+
+getwd()
+
+
+#Step 1: Read the CSV file
+traffic <- read.csv(here::here("Project_Code/Data/data_traffic.csv"))
+
+str(traffic)
+
+```
+
+```{r chunk-select-variables-to-process, include=FALSE}
+
+
+#Step 1
+
+#Need to identify which conditions lead to accidents where party is at fault
+
+
+
+accident_information <- select(traffic, c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, stwd_vehicle_type, inattention, vehicle_autonomous, at_fault, collision_severity))
+
+accident_information_by_year <- select(traffic, c( accident_year , collision_severity))
+
+
+
+
+```
+
+```{r chunk_data_cleaning_visualization_by_year, include=FALSE}
+
+
+#Step 2 - Data cleaning and visualization
+
+
+#check if any bad data in accident_year
+# observation - No bad data from 2019 - 2024, but bad data for future years
+
+count(accident_information_by_year, accident_year)
+category_count_accident_by_year <- table(accident_information_by_year$accident_year)
+categories_to_keep_by_year <- c('2019', '2020', '2021', '2022', '2023')
+accident_information_by_year <- accident_information_by_year[accident_information_by_year$accident_year %in% categories_to_keep_by_year, ]
+
+#Bar graph by year
+ggplot_accident_by_year = ggplot(data = accident_information_by_year, aes(x=accident_year)) + geom_bar()
+#Observation - Clearly during covid accidents were down, but with lockdown being lifted, accidents increasing with each year.
+ggplot_accident_by_year
+```
+
+```{r chunk_data_cleaning_visualization_by_month_and_day_of_the_week, include=FALSE}
+
+# 
+# 
+# # #check if any bad data in month
+# count(accident_information, month)
+# # #observation - No bad data. Data ranges through various months. Most accidents during winter/rainy months. Lowest accident rates in April, May. Accidents start picking up from Sep through March.Highest in October.
+# # #Bar graph by month
+# ggplot(data = accident_information, aes(x = fct_infreq(month))) + geom_bar()
+# 
+# 
+#check if any bad data in day_of_week
+# observation - There are 8 blanks
+# accident_information <- subset(accident_information, accident_information$day_of_week != "")
+# count(accident_information, day_of_week)
+# ggplot(data = accident_information, aes(x = fct_infreq(day_of_week))) + geom_bar()
+# 
+# x = as.data.frame(table(accident_information$day_of_week))
+# x$percent = round(100*x$Freq/sum(x$Freq), digits = 1)
+# x$label = paste(x$Var1," (", x$percent,"%)", sep = "")
+# x
+# 
+# pie(x$Freq, labels = x$label, main = "Accidents % by day of the week", col= rainbow(length(x) ))
+# 
+# 
+```
+
+```{r chunk_data_cleaning_visualization_by_time_of_the_day, include=FALSE}
+# 
+# #check if any bad data in time_cat
+# #observation - There are 3 blanks.
+accident_information <- subset(accident_information, accident_information$time_cat != "")
+count(accident_information, time_cat)
+x_accidents_by_time_of_the_day = as.data.frame(table(accident_information$time_cat))
+x_accidents_by_time_of_the_day$percent = round(100*x_accidents_by_time_of_the_day$Freq/sum(x_accidents_by_time_of_the_day$Freq), digits = 1)
+x_accidents_by_time_of_the_day$label = paste(x_accidents_by_time_of_the_day$Var1," (", x_accidents_by_time_of_the_day$percent,"%)", sep = "")
+x_accidents_by_time_of_the_day
+pie_accidents_by_time_of_the_day <- pie(x_accidents_by_time_of_the_day$Freq, labels = x_accidents_by_time_of_the_day$label, main = "Accidents % by time of the day", col= rainbow(length(x_accidents_by_time_of_the_day) ))
+
+
+```
+
+```{r chunk_data_cleaning_visualization_by_weather, include=FALSE}
+# 
+#check if any bad data in weather_1
+# observation - Few data whose frequency < 5. Interestingly around 85% of accidents are happening in clear weather
+count(accident_information, weather_1)
+category_count_weather <- table(accident_information$weather_1)
+categories_to_keep_weather <- names(category_count_weather[category_count_weather >= 5])
+
+
+accident_information <- accident_information[accident_information$weather_1 %in% categories_to_keep_weather, ]
+
+
+
+```
+
+```{r chunk_data_cleaning_visualization_by_type_of_collision, include=FALSE}
+
+# 
+# # #check if any bad data in distance
+# # # observation - No bad data. Additionally max collisions are at 0 distance.
+# count(accident_information, distance)
+# 
+#check if any bad data in type_of_collision
+# observation - No bad data.
+count(accident_information, type_of_collision)
+
+category_count_type_of_collision <- table(accident_information$type_of_collision)
+x_type_of_collision = as.data.frame(table(accident_information$type_of_collision))
+x_type_of_collision$percent = round(100*x_type_of_collision$Freq/sum(x_type_of_collision$Freq), digits = 1)
+x_type_of_collision$label = paste(x_type_of_collision$Var1," (", x_type_of_collision$percent,"%)", sep = "")
+x_type_of_collision
+pie_accidents_by_type_of_collision <- pie(x_type_of_collision$Freq, labels = x_type_of_collision$label, main = "Types of collision", col= rainbow(length(x_type_of_collision) ))
+
+
+
+```
+
+```{r chunk_data_cleaning_visualization_pedestrian_action, include=FALSE}
+
+
+#check if any bad data in ped_action
+# observation - Few data whose frequency <5.
+count(accident_information, ped_action)
+
+category_count_ped_action <- table(accident_information$ped_action)
+categories_to_keep_ped_action <- names(category_count_ped_action[category_count_ped_action >= 5])
+accident_information <- accident_information[accident_information$ped_action %in% categories_to_keep_ped_action, ]
+
+#to draw a better pie chart with less number of categories additional filtering applied
+categories_to_keep_ped_action_filtered <- names(category_count_ped_action[category_count_ped_action >= 100])
+accident_information_pie_chart_ped_action_filtered <- accident_information[accident_information$ped_action %in% categories_to_keep_ped_action_filtered, ]
+  
+x_accidents_by_pedestrian_involvement = as.data.frame(table(accident_information_pie_chart_ped_action_filtered$ped_action))
+x_accidents_by_pedestrian_involvement$percent = round(100*x_accidents_by_pedestrian_involvement$Freq/sum(x_accidents_by_pedestrian_involvement$Freq), digits = 1)
+x_accidents_by_pedestrian_involvement$label = paste(x_accidents_by_pedestrian_involvement$Var1," (", x_accidents_by_pedestrian_involvement$percent,"%)", sep = "")
+x_accidents_by_pedestrian_involvement
+pie_accidents_by_pedestrian_involvement <- pie(x_accidents_by_pedestrian_involvement$Freq, labels = x_accidents_by_pedestrian_involvement$label, main = "Accidents by Pedestrian Involvement", col= rainbow(length(x_accidents_by_pedestrian_involvement) ))
+
+
+
+#draw a pie chart with accidents to give breakdown of types of pedestrian involvement
+categories_to_keep_accidents_breakdown <- c('No Pedestrian Involved')
+pedestrian_accident_information_pie_chart_breakdown <- accident_information[!(accident_information$ped_action %in% categories_to_keep_accidents_breakdown), ]
+  
+x_accidents_breakdown_where_pedestrian_involvement = as.data.frame(table(pedestrian_accident_information_pie_chart_breakdown$ped_action))
+x_accidents_breakdown_where_pedestrian_involvement$percent = round(100*x_accidents_breakdown_where_pedestrian_involvement$Freq/sum(x_accidents_breakdown_where_pedestrian_involvement$Freq), digits = 1)
+x_accidents_breakdown_where_pedestrian_involvement$label = paste(x_accidents_breakdown_where_pedestrian_involvement$Var1," (", x_accidents_breakdown_where_pedestrian_involvement$percent,"%)", sep = "")
+x_accidents_breakdown_where_pedestrian_involvement
+pie_accidents_breakdown_where_pedestrian_involvement <- pie(x_accidents_breakdown_where_pedestrian_involvement$Freq, labels = x_accidents_breakdown_where_pedestrian_involvement$label, main = "Accident Breakdown For Pedestrian Involvement", col= rainbow(length(x_accidents_breakdown_where_pedestrian_involvement) ))
+
+```
+
+```{r chunk_data_cleaning_visualization_road_conditions, include=FALSE}
+
+#check if any bad data in road_surface
+# observation - No bad data.
+count(accident_information, road_surface)
+category_count_road_surface <- table(accident_information$road_surface)
+categories_to_keep_road_surface <- names(category_count_road_surface[category_count_road_surface >= 50])
+accident_information <- accident_information[accident_information$road_surface %in% categories_to_keep_road_surface, ]
+x_accidents_by_road_surface = as.data.frame(table(accident_information$road_surface))
+x_accidents_by_road_surface$percent = round(100*x_accidents_by_road_surface$Freq/sum(x_accidents_by_road_surface$Freq), digits = 1)
+x_accidents_by_road_surface$label = paste(x_accidents_by_road_surface$Var1," (", x_accidents_by_road_surface$percent,"%)", sep = "")
+x_accidents_by_road_surface
+pie_accidents_by_road_surface <- pie(x_accidents_by_road_surface$Freq, labels = x_accidents_by_road_surface$label, main = "Accidents % by road surface", col= rainbow(length(x_accidents_by_road_surface) ))
+# 
+# 
+#check if any bad data in road_cond_1
+# observation - No bad data.
+count(accident_information, road_cond_1)
+category_count_road_cond <- table(accident_information$road_cond_1)
+categories_to_keep_road_condition <- names(category_count_road_cond [category_count_road_cond  >= 10])
+accident_information <- accident_information[accident_information$road_cond_1 %in% categories_to_keep_road_condition, ]
+
+```
+
+```{r chunk_data_cleaning_visualization_lighting, include=FALSE}
+# 
+#check if any bad data in lighting
+# observation - No bad data.
+count(accident_information, lighting)
+
+#to draw a better pie chart with less number of categories additional filtering applied
+category_count_lighting <- table(accident_information$lighting)
+categories_to_keep_lighting <- names(category_count_lighting[category_count_lighting >= 300])
+accident_information_pie_chart_lighting <- accident_information[accident_information$lighting %in% categories_to_keep_lighting, ]
+
+x_accidents_by_lighting = as.data.frame(table(accident_information_pie_chart_lighting$lighting))
+x_accidents_by_lighting$percent = round(100*x_accidents_by_lighting$Freq/sum(x_accidents_by_lighting$Freq), digits = 1)
+x_accidents_by_lighting$label = paste(x_accidents_by_lighting$Var1," (", x_accidents_by_lighting$percent,"%)", sep = "")
+x_accidents_by_lighting
+pie_accidents_by_lighting <- pie(x_accidents_by_lighting$Freq, labels = x_accidents_by_lighting$label, main = "Accidents % by lighting", col= rainbow(length(x_accidents_by_lighting) ))
+# 
+
+
+```
+
+```{r chunk_data_cleaning_visualization_intersection, include=FALSE}
+#check if any bad data in intersection
+# observation - No bad data.
+count(accident_information, intersection)
+
+
+x_accidents_by_distance_from_intersection = as.data.frame(table(accident_information$intersection))
+x_accidents_by_distance_from_intersection$percent = round(100*x_accidents_by_distance_from_intersection$Freq/sum(x_accidents_by_distance_from_intersection$Freq), digits = 1)
+x_accidents_by_distance_from_intersection$label = paste(x_accidents_by_distance_from_intersection$Var1," (", x_accidents_by_distance_from_intersection$percent,"%)", sep = "")
+
+pie_accidents_by_distance_from_intersection <- pie(x_accidents_by_distance_from_intersection$Freq, labels = x_accidents_by_distance_from_intersection$label, main = "Accidents % by distance from intersection ", col= rainbow(length(x_accidents_by_distance_from_intersection) ))
+
+```
+
+```{r chunk_data_cleaning_other_features, include=FALSE}
+
+# #check if any bad data in number_killed
+# # observation - No bad data.
+# count(accident_information, number_killed)
+
+
+
+#party_sobriety, race,vehicle_year, vz_pcf_description,inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity
+
+# # #check if any bad data in party_sobriety
+# # # observation - THere is data with frequency < 5
+count(accident_information, party_sobriety)
+category_count <- table(accident_information$party_sobriety)
+categories_to_keep <- names(category_count[category_count >= 10])
+accident_information <- accident_information[accident_information$party_sobriety %in% categories_to_keep, ]
+
+
+# #check if any bad data in race
+# # observation - No bad data.
+count(accident_information, race)
+
+
+# # check if any bad data in inattention
+# #  observation - No bad data.
+count(accident_information, inattention)
+category_count <- table(accident_information$inattention)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$inattention %in% categories_to_keep, ]
+
+# # check if any bad data in vehicle_autonomous
+# #  observation - No bad data.
+count(accident_information, vehicle_autonomous)
+category_count <- table(accident_information$vehicle_autonomous)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$vehicle_autonomous %in% categories_to_keep, ]
+
+# # check if any bad data in at_fault
+# #  observation - No bad data.
+count(accident_information, at_fault)
+
+
+# #check if any bad data in party_sex
+# # observation - No bad data.
+count(accident_information, party_sex)
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, party_type)
+category_count <- table(accident_information$party_type)
+categories_to_keep <- names(category_count[category_count >= 10])
+accident_information <- accident_information[accident_information$party_type %in% categories_to_keep, ]
+
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, party_age)
+category_count <- table(accident_information$party_age)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$party_age %in% categories_to_keep, ]
+
+# #check if any bad data in number_injured
+# # observation - No bad data.
+count(accident_information, number_injured)
+
+
+# #check if any bad data in collision_severity
+# # observation - No bad data.
+count(accident_information, collision_severity)
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, stwd_vehicle_type)
+category_count <- table(accident_information$stwd_vehicle_type)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$stwd_vehicle_type %in% categories_to_keep, ]
+
+
+#check if any bad data in party_age
+accident_information <- filter(accident_information, party_age > 0)
+
+```
+
+```{r chunk_feature_section_chi_square, include=FALSE}
+
+
+accident_information_changed <- accident_information
+
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Medical", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Other Visible)", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Complaint of Pain)", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Severe)", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Fatal", 1)
+
+accident_information_changed$collision_severity <- as.numeric(accident_information_changed$collision_severity)
+
+accident_information_changed
+
+#Medical - 1
+#Injury (Other Visible) - 1
+#Injury (Complaint of Pain) - 0
+#Injury (Severe) - 1
+#Fatal - 1
+#accident_information_changed
+
+accident_information_changed
+
+
+#apply chi squared test
+# all variables being compared are categorical in nature, and in each variable category every value occurs at least 5 times
+
+CHIS_fatality <- lapply(accident_information_changed[,-c(5, 12, 13, 16, 23)], function(x) chisq.test(table(factor(accident_information_changed[,23]), factor(x))))
+
+# CHIS_fatality
+
+do.call(rbind, CHIS_fatality) [, c(1,2,3)]
+
+
+```
+
+```{r chunk_feature_section_model_optimization, include=FALSE}
+
+
+accident_information_changed <- select(accident_information_changed, -c(inattention, day_of_week, lighting))
+
+
+accident_information_changed
+
+
+accident_information_changed <- accident_information_changed %>%
+  mutate(Passenger = ifelse(grepl("Passenger", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pedestrian = ifelse(grepl("Pedestrian", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Motorcycle = ifelse(grepl("Motorcycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Terrain = ifelse(grepl("Terrain|Dune", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Bicycle = ifelse(grepl("Bicycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Zip_Scooter = ifelse(grepl("Zip|Scooter", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pickup = ifelse(grepl("Pickup", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Police = ifelse(grepl("Police", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Public = ifelse(grepl("Public", accident_information_changed$stwd_vehicle_type), 1, 0),
+         SUV = ifelse(grepl("Sport Utility Vehicle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Unknown = ifelse(grepl("Unknown", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", accident_information_changed$stwd_vehicle_type), 1, 0)) %>%
+  select(-stwd_vehicle_type)
+
+
+str(accident_information_changed)
+
+
+#Improvement
+accident_information_changed <- select(accident_information_changed, -c(number_killed, number_injured))
+
+#Improvement
+accident_information_changed <- select(accident_information_changed, -at_fault)
+
+
+
+#HUGE improvement
+accident_information_changed <- select(accident_information_changed, -party_age)
+
+#Huge improvement
+accident_information_changed <- select(accident_information_changed, -distance)
+
+
+accident_information_changed
+
+
+accident_information_changed <- dummy_cols(accident_information_changed)
+
+accident_information_changed <- select(accident_information_changed,-c(month, time_cat, weather_1, intersection, party_sobriety, party_type, party_sex, road_surface, race, road_cond_1, vehicle_autonomous, ped_action, type_of_collision))
+
+
+accident_information_changed
+
+```
+
+```{r chunk_knn_modeling, include=FALSE}
+
+normalize <- function(x) {
+  return ( (x - min(x)) / (max(x) - min(x)))
+}
+
+standardized_accident_information_changed <- as.data.frame(lapply(accident_information_changed[,], normalize))
+
+standardized_accident_information_changed <- as.data.frame(lapply(accident_information_changed[,], function(x) x = as.double(x)))
+
+standardized_accident_information_changed
+
+
+
+set.seed(1000)
+
+standardized_accident_information_changed
+
+
+#Initial splitting into training and validation/testing
+fatal_split <- sample.split(standardized_accident_information_changed$collision_severity, SplitRatio = 0.6)
+train_fatal <- subset(standardized_accident_information_changed, fatal_split == T)
+next_step_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
+
+#second splitting into validation and testing
+valid_split <- sample.split(next_step_fatal$collision_severity, SplitRatio = 0.5)
+validation_fatal <- subset(next_step_fatal, valid_split == T)
+testing_fatal <- subset(next_step_fatal, valid_split == F)
+
+
+count(train_fatal, collision_severity)
+
+data(train_fatal)
+balanced_train_fatal <- ovun.sample(collision_severity ~ ., data = train_fatal, method = "over", N=18000)$data
+
+count(balanced_train_fatal, collision_severity)
+
+
+
+train_fatal
+validation_fatal
+testing_fatal
+
+
+#Determining the k
+k_num_fatal <- as.integer(sqrt(nrow(balanced_train_fatal)))
+k_num_fatal <- k_num_fatal + 1
+
+
+#VALIDATION AND FINE TUNE TEST
+fatal_model_validating <- knn(train = balanced_train_fatal, test = validation_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
+fatal_model_validating
+
+
+validation_fatal_vals <- factor(validation_fatal$collision_severity)
+validation_fatal_vals
+
+f1_score_fatal <- confusionMatrix(factor(fatal_model_validating), validation_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal
+
+
+#FINAL TEST
+fatal_model_testing <- knn(train = balanced_train_fatal, test = testing_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
+
+
+testing_fatal_vals <- factor(testing_fatal$collision_severity)
+
+f1_score_fatal_test <- confusionMatrix(factor(fatal_model_testing), testing_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal_test
+
+
+
+
+```
+
+**Abstract**:
+
+Traffic accidents are a daily occurrence across the world and the city of San Francisco is no exception. Many of these accidents result in severe injuries and even fatalities in many cases. There are social, financial, and emotional impacts to these accidents in addition to the strain on medical and police resources in the city. In spite of the best efforts of the city of San Francisco, the number of traffic accidents has been steadily on the rise with almost a third of these leading to severe injuries or fatalities. We need to make San Francisco streets safer.
+
+The goal of this paper is to understand and analyze the traffic accident data for San Francisco for the last few years, and identify the leading factors which cause severe or fatal injuries. Additionally, the paper also focuses on creating and fine-tuning a prediction model which takes different values for these leading accident causing factors as input and predicts the severity of the accident. We hope that identification of these key factors will enable the city to determine what type of traffic safety resources to invest in, and the model prediction will help the city to identify when and where to deploy those resources for effective traffic safety planning.
+
+The paper first conducts exploratory data analysis to establish trends, patterns, or outliers in the San Francisco accident data consisting of a very large number of features (\>80). Then the paper attempts to identify which of these features are the most significant factors that cause severe injuries and even fatal accidents using the Chi-square methodology. These features were then used as inputs for a KNN classification model in order to predict the severity of potential collisions based on conditions. The paper also talks about the iterations of fine tuning the model.
+
+The research results determined that features like intersection, pedestrian action, type of collision, party type, and vehicle type as some of the greatest contributing factors to collisions leading to severe injuries or fatalities. The final KNN model created as a part of this research achieved an accuracy of 0.92, a sensitivity of 0.87, a specificity of 0.95 and an F1 score of 0.89 indicating that the model is fairly accurate.
+
+The causing factors clearly show that intersections and crosswalks are the locations which lead to the most number of severe accidents. We have also seen that not only drivers, but also pedestrians are at fault in these accidents. A serious effort should be made to make intersections and crosswalks safer for all parties. This can include more signage, brighter signage at night, possibly audible warnings so that everyone using intersections and crosswalks are extra careful. Additionally, more actions are required by the tire and car manufacturers for improving drivability under wet conditions. The model can help the city with optimal resource planning - determine when and where to invest in the right kind of resources.
+
+## 1. Background
+
+In 2014, San Francisco’s Vision Zero program was initiated with a mission to create safer streets and eliminate traffic deaths by 2024. However, the total number of street accidents is still high.
+
+```{r, echo=FALSE}
+ggplot_accident_by_year
+
+```
+
+Due to the Covid lockdown, the number of accidents was reduced in 2020 compared to 2019, but since then, the number has been steadily rising over the past 3 years since the pandemic's end.
+
+![](images/PercentageOfFatalAccidentsByYear.jpg)
+
+Even more concerning, the percentage of collisions resulting in a fatality or severe injury has remained steady with no signs of decreasing and is at an average of 36% during the same five year period. 
+
+Although the San Francisco City Council has already taken several preventive measures such as dedicated walking and biking areas, more speed bumps, reduced speed limits, and wider intersection turning, the data shows that more actions are required for better traffic safety planning. 
+
+The goal of this paper is the following:
+
+1.  Exploratory data analysis and extract key insights. 
+
+2.  Identify leading factors contributing to high severity accidents in San Francisco.
+
+3.  Leverage machine learning techniques to predict the severity of an accident given certain conditions. 
+
+The research conducted involved exploratory data analysis as well as training and testing a KNN model using a publicly available collision data set for San Francisco, downloaded from the SF City website. The research findings will help the city in making sound decisions when and where to invest funds for various safety programs and also better resource planning in the event of an accident. For example, the dataset indicates a higher probability of accidents during the afternoon and a majority of the accidents occurring at an intersection. The [San Francisco Vision Zero initiative](https://www.visionzerosf.org/) had a 10 year target of eliminating any accident fatalities by 2024 and exclusively targeted pedestrian safety to achieve this target. However, the grim reality, as per the data, is far from the target. 
+
+This fresh analysis could help the City identify where the real issues are and come up with alternative strategies for implementing better traffic safety and accident prevention.
+
+The rest of the paper covers the following sections:
+
+-   **Methodology** - describes the data set, data preparation methodology,  feature selection methodology followed by modeling strategy. 
+
+-   **Results and findings** - outlines key data exploration observations, details of data cleaning exercise, results of feature selection process, findings from modeling exercise.  
+
+-   **Conclusion** **and suggested recommendations** - covers the conclusion and future implications of the findings.
+
+-   **Code and Data Availability -** links to the code and dataset
+
+-   **Acknowledgements**
+
+## 2. Methodology
+
+### 2.1 About the data: 
+
+This research project used a large publicly available collision dataset released by the SF City Government. The dataset contains 31995 observations across 86 features as shown below.
+
+```{r, echo=FALSE}
+str(traffic)
+```
+
+Out of the 86 features, 23 of them are just IDs or metadata that are not relevant to this study. The rest of the features include important data about the accident itself, such as time, location, number of people injured and killed, weather, road conditions, and lighting, as well as data about the individuals involved in the accident, like gender, age, race, vehicle type, and the person’s sobriety. It is important to note that the majority of these features are nominal, and only a few factors, like distance from intersection, number killed and injured, and age, are numerical values. The dataset is also not ready to be used immediately, as there are several NA values or values that don’t make sense, such as negative ages.
+
+### 2.2 Data Pre-Processing:
+
+Before using the dataset in any way, there must be a pre-processing cleansing of the data. The columns that are irrelevant, like the IDs, are filtered out. The observations containing NA or NaN values are removed, as well as outliers that didn’t make sense. 
+
+### 2.3 Feature Selection Techniques
+
+Selecting relevant features is extremely important when training a machine learning model for optimal model efficiency and performance. Unless most important features are selected, we run the risk of dealing with too much or too little data. A model trained with too much data runs the risk of overfitting. It also becomes exponentially more costly and takes a longer time to train a model with a lot of data. Additionally, a lot of irrelevant features not only impact model complexity, but lead to model inaccuracies.
+
+In the given SF collision dataset, since most of the features as well as the target variable are nominal, a chi-square test is used to compare every possible feature to the target variable.
+
+A Chi-Square test compares the counts of each value in two categorical variables and compares the actual data to the expected values. It is used to determine if the difference between the two are statistically significant, which would indicate how strongly the variables are associated together.
+
+While there are other methods of determining correlation or association, such as the R^2^ value or conducting an ANOVA test, these methods work with numerical values, which will simply not apply to the nominal variables in this dataset.
+
+For each chi-square test for independence, the null hypothesis is H~0~: there is no association between the two variables, and the alternative hypothesis is H~a~: there is an association between the two variables, at a .05 significance level. Therefore, a chi-square test resulting in a p-value less than 0.05 indicates that there is a statistically significant association between that feature and the target. All the features that do have an association will be selected to be used in the model.
+
+### 2.4 Modeling Strategy
+
+As one of the goals of this study is to predict the collision severity, a nominal target, a classification model is the most appropriate. To achieve this, a KNN (K-Nearest-Neighbor) classification model will be used. The KNN model is simple to use and understand and automatically forms classifications as well as predictions while also being quite accurate. The model forms predictions by finding the ‘k’ closest points to the point to be predicted, and classifies this new point as the most common classification of its nearest neighbors. 
+
+## 3. Results and Findings
+
+### 3.1 Data Exploration and Key Findings
+
+```{r, echo=FALSE}
+pie_accidents_by_time_of_the_day <- pie(x_accidents_by_time_of_the_day$Freq, labels = x_accidents_by_time_of_the_day$label, main = "Accidents % by time of the day", col= rainbow(length(x_accidents_by_time_of_the_day) ))
+```
+
+The chart breaks down the percentage of accidents by the time of the day. The majority of the accidents occur in the second half the day, between 2 PM - 10 PM. This could be due to rush hour afternoon traffic and bad visibility after dark, especially in winter conditions.
+
+```{r, echo=FALSE}
+pie_accidents_by_distance_from_intersection <- pie(x_accidents_by_distance_from_intersection$Freq, labels = x_accidents_by_distance_from_intersection$label, main = "Accidents % by distance from intersection ", col= rainbow(length(x_accidents_by_distance_from_intersection) ))
+```
+
+A large majority of accidents take place within 20 feet of an intersection, which indicates that authorities should pay special attention to these locations in order to make them safer for both drivers and pedestrians.
+
+```{r, echo=FALSE}
+pie_accidents_by_type_of_collision <- pie(x_type_of_collision$Freq, labels = x_type_of_collision$label, main = "Types of collision", col= rainbow(length(x_type_of_collision) ))
+
+```
+
+'Broadside accidents (T-Bones)' are by far the most common type of collision causing accidents, followed by accidents involving pedestrians, rear ends, and sideswipes. Broadside collisions are most likely to occur in intersections, which again proves that intersections are the most dangerous locations for accidents and need special attention.
+
+```{r, echo=FALSE}
+pie_accidents_by_pedestrian_involvement <- pie(x_accidents_by_pedestrian_involvement$Freq, labels = x_accidents_by_pedestrian_involvement$label, main = "Accidents by Pedestrian Involvement", col= rainbow(length(x_accidents_by_pedestrian_involvement)))
+```
+
+Nearly a quarter of accidents involve a pedestrian, which is actually quite high, as a pedestrian could be severely injured or killed in a car accident.
+
+```{r, echo=FALSE}
+pie_accidents_breakdown_where_pedestrian_involvement <- pie(x_accidents_breakdown_where_pedestrian_involvement$Freq, labels = x_accidents_breakdown_where_pedestrian_involvement$label, main = "Accident Breakdown For Pedestrian Involvement", col= rainbow(length(x_accidents_breakdown_where_pedestrian_involvement) ))
+```
+
+The large amount of accidents between both vehicles and pedestrians at intersections calls for better crosswalk management and intersection management systems to reduce this number.
+
+```{r,echo=FALSE}
+pie_accidents_by_lighting <- pie(x_accidents_by_lighting$Freq, labels = x_accidents_by_lighting$label, main = "Accidents % by lighting", col= rainbow(length(x_accidents_by_lighting) ))
+```
+
+Although the majority of the accidents occur during the day, 1/3 of the accidents occur at night. This could be due to poor visibility and would require better signaling/signage at night.
+
+```{r, echo=FALSE}
+pie_accidents_by_road_surface <- pie(x_accidents_by_road_surface$Freq, labels = x_accidents_by_road_surface$label, main = "Accidents % by road surface", col= rainbow(length(x_accidents_by_road_surface) ))
+```
+
+Interestingly, a tenth of accidents take place in Wet conditions. While it is the driver’s responsibility to be safe, this number could possibly be reduced by tire and car manufacturers improving drivability in such conditions.
+
+### 3.2 Data Processing Details
+
+The dataset was modified to create two different datasets. One was used for the feature selection process and the other was used for the modeling process.
+
+As the feature selection technique chosen was Chi-Square tests, the data needed to be categorical variables. Most of the variables were already categorical, and the few that were numerical (e.g. number injured or number killed) were related to the outcome of the model prediction and so deemed irrelevant for modeling. The data set was already decently formatted, and only a few columns contained NA values. While party_age was a numerical variable that wasn’t considered for the Chi-Square test, it would still eventually be used for the model. For the target variable, collision severity, the count of fatality was actually extremely low, in the 300s, as well as 'Medical' (a low injury level) having only 4 observations, compared to over 30,000 observations. There was simply not enough data to use for calculations. So, the values were grouped together by visible, severe injuries, and fatalities represented by 1, and only complaints of injuries by 0. This created a balance between the values and the data was ready to be used for Chi-Square testing.
+
+The dataset used for the modeling was based off of this dataset. The features that were deemed to be insignificant by the feature selection process were omitted. Next, the categorical variables were converted to numerical. This process was done using one-hot encoding, in which each type value of each variable is turned into a new column, and 1 denotes that the observation is of that value, and 0 denotes that it is not. Additionally, two of the variables needed special attention. First was the at_fault column, which simply contained Yes or No values. It wouldn’t make sense to create a Yes and No column separately, so Yes was replaced with 1 and No was replaced with 0. The other variable requiring extra converting was vehicle_type. Since there were over 100 types of vehicles, it would cause unnecessary cluttering to create a new column for each type. Instead, 13 columns were created by grouping together similar vehicles by a keyword. After this, a simple function ‘dummy_cols’ was applied to the entire dataset. The function skips over numerical columns, so columns like collision_severity (already converted), distance from intersection, number of people killed and injured, and at_fault were left alone. The rest of the columns were automatically created by each value and assigned 1’s and 0’s.
+
+The data was now converted fully to numerical values, but not yet ready for modeling. This was because variables such as party_age and distance from intersection were large integer values, not in terms of 0 to 1. All the columns were then scaled to a range of 0 to 1 using a created normalize() function.
+
+```{r}
+# normalize <- function(x) {
+#   return ( (x - min(x)) / (max(x) - min(x)))
+# }
+```
+
+This made the data finally ready for modeling.
+
+### 3.3 Feature Selection Results
+
+As mentioned, the relevance of each feature was determined by conducting a chi-squared test using the feature and the collision severity.
+
+![](images/chiSquare.jpg)
+
+The numerical features (distance, number killed and injured, and party_age) were not used as a chi-square test only deals with categorical variables. 
+
+The results of the tests, specifically chi-square statistic, degrees of freedom, and p-value were as follows:
+
+```{r}
+do.call(rbind, CHIS_fatality) [, c(1,2,3)]
+```
+
+### 3.4 Modeling Details
+
+Once the data was prepared for modeling as explained in section 3.2, a machine learning model using a KNN algorithm was created with the goal of predicting the severity of any accident. The model was trained on the data, using the significant features mentioned previously. A 60-20-20 split ratio was used to create a training, validation, and testing dataset.
+
+![](images/dataSplitting.jpg)
+
+The model also requires a ‘k’ value, which is used to identify how many points each prediction will be compared with for the classification. This value is determined by taking the square root of the number of data points in the testing set. Since the value was even (134), 1 was added to make it odd, necessary for potential ties.
+
+The model is then created and tested on the validation set using the knn() function from the FNN library.
+
+![](images/callingKNNFunction.jpg)
+
+The results and accuracy of the model is as shown below:
+
+![](images/confusionMatrixPriorToTuning.jpg)
+
+The output showed a 72% accuracy which is fairly high, but the sensitivity/recall showed a poor value of 0.24 and F1-score was 0.38, which is low, indicating that the model is not able to correctly identify high severity accidents.
+
+### 3.5 Modeling Fine Tuning
+
+As the model was very poor initially, steps needed to be taken to improve it.
+
+First of all, the training set was very imbalanced. Specifically, the number of observations that were low severity was twice as many as high severity.
+
+```{r, echo=FALSE}
+count(train_fatal, collision_severity)
+```
+
+This imbalance potentially skewed the results heavily and could be the reason why the model predicted false negatives so often. To combat this, an upsampling method was used, which brought the distribution of non-severe to severe collisions to be much more even
+
+```{r, echo=FALSE}
+count(balanced_train_fatal, collision_severity)
+```
+
+Re-running the model using the balanced training set and the same validation set already showed greatly improved results.
+
+![](images/confustionMatrixAfterFirstRoundOfImprovement.jpg)
+
+While the accuracy remained similar, the number of false negatives decreased and true positives greatly increased, and the sensitivity, recall, and F1 score nearly doubled.
+
+To further improve the model, the features party_age and distance were removed as predictors in the model. Party_age was removed because of its large spread, causing difficulties to associate it with a specific classification group. Distance (distance from intersection) was also removed, as the data was very widely spread and the information was already represented by the variable intersection in 3 simple categories. The removal of just these two features resulted in a significant improvement in accuracy to over 92%, and a sensitivity, specificity, precision, and F1 score of around 90%. 
+
+```{r echo=FALSE}
+f1_score_fatal
+```
+
+Finally the model is run using the testing set and the results are shown below.
+
+```{r echo=FALSE}
+f1_score_fatal_test
+```
+
+As the results indicate the model accuracy, sensitivity, specificity, F1 score are all fairly high. The model has been optimized.
+
+## 4. Conclusion and suggested recommendations
+
+We have seen from the San Francisco traffic accident data that post pandemic, the number of accidents in the city is steadily rising with over a third of these accidents leading to serious injuries or fatalities. I think we can all agree that even one death due to a traffic accident is one too many and all efforts should be made by the authorities as well as the people using the streets of San Francisco to ensure safer driving conditions for motorists, cyclists and pedestrians.
+
+The causing factors clearly show that intersections and crosswalks are the locations which lead to the most number of severe accidents. We have also seen that not only drivers, but also pedestrians are at fault in these accidents. A serious effort should be made to make intersections and crosswalks safer for all parties. This can include more signage, brighter signage at night, possibly audible warnings so that everyone using intersections and crosswalks are extra careful. Additionally, more actions are required by the tire and car manufacturers for improving drivability under wet conditions. The model can help the city with optimal resource planning - determine when and where to invest in the right kind of resources.
+
+## 5. Code and Data Availability
+
+You can access the code [here](https://github.com/the-codingschool/DSRP-2024-Kaizheng/tree/main/Project_Code/AdityaProject) and the dataset used [here](https://github.com/the-codingschool/DSRP-2024-Kaizheng/tree/main/Project_Code/AdityaProject/Data).
+
+## 6. Acknowledgements
+
+I would like to acknowledge the following individuals who helped make this research project possible:
+
+1.  Mentor Kaizheng Wang for his invaluable guidance and ideas.
+
+2.  Ms. Sarah Parker for teaching the data science skills and concepts needed.
+
+3.  Ms. Wanjiru Randolph for her help with the coding and debugging.
+
+4.  The Coding School for providing this research opportunity.
