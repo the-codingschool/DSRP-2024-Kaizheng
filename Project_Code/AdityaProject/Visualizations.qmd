@@ -1,0 +1,159 @@
+# Are accidents caused more by certain demographics? Gender, age, income}
+
+# 
+
+# Are accidents caused more by certain types of cars?
+
+# 
+
+# Are accidents happening more at certain times of the day? Divide day into 3 hr windows maybe
+
+# 
+
+# Are accidents happening more in certain areas of the streets? Intersections, freeways, regular portion of the streets? And what speed limit zones?
+
+# 
+
+# What % are caused due to speeding? Any other reason stands out?
+
+# 
+
+# How many cars on average ( daily /monthly/ annually ) get involved in accidents ( responsible or not )
+
+# 
+
+# Is there any trend where and what times - multiple car ( 3 or more cars ) accidents happen?
+
+# 
+
+# How many accidents are single car accidents? What are the main causes?
+
+```{r}
+
+#install.packages("readr")
+library(readr)
+library(dplyr)
+library(janitor)
+
+getwd()
+
+
+#Step 1: Read the CSV file
+count(traffic, intersection)
+
+
+str(traffic)
+
+```
+
+```{r}
+#Step 2: Visualizing some basic data
+
+library(ggplot2)
+
+ped <- filter(traffic, party_type == "Pedestrian")
+count(ped, at_fault == "Yes")
+
+
+#By month
+ggplot(data = traffic, aes(x=month)) + geom_bar()
+
+
+#By year
+ggplot(data = traffic, aes(x=accident_year)) + geom_bar()
+
+
+#By gender
+pie(table(traffic$party_sex))
+
+
+#Injury types
+pie(table(traffic$collision_severity))
+
+
+#Time of day
+
+pie(table(traffic$time_cat))
+
+
+
+
+```
+
+```{r}
+## This will only focus on who caused accidents
+
+accidenters <- subset(traffic, at_fault == "Yes")
+
+#head(accidenters)
+
+accidenters
+
+pie(table(accidenters$party_sex))
+
+pie(table(accidenters$race))
+
+
+count(accidenters, vz_pcf_description)
+
+#by_age <- subset(accidenters, !is.na(party_age))
+#by_age <- subset(by_age, party_age > 15)      
+
+by_age <- filter(accidenters, party_age > 0)
+
+#by_age
+
+##Histogram by age and subdivided by gender
+ggplot(data = by_age, aes(x=party_age, fill = factor(party_sex))) + geom_histogram()
+
+
+```
+
+```{r}
+
+
+#Compares the types of vehicle
+ggplot(traffic, aes(stwd_vehicle_type)) + geom_bar() + theme(axis.text.x = element_text(angle = 90))
+
+
+
+
+primary_streets <- get_dupes(accidenters, primary_rd)
+primary_streets 
+
+secondary_streets <- get_dupes(accidenters, secondary_rd)
+secondary_streets
+
+
+
+important_street <- "MISSION ST"
+
+
+acc_on_imp <- subset(accidenters, primary_rd == important_street)
+
+acc_on_imp
+
+
+ggplot(acc_on_imp, aes(vz_pcf_description)) + geom_bar()
+
+
+
+
+
+count(acc_on_imp, vz_pcf_description)
+
+#62 Driver or Bicyclist to yield right-of-way at crosswalks
+#41 Following too closely prohibited
+#31 illegal U turn in business district
+#68 Red signal - driver or bicyclist responsibilities
+#93 Unsafe speed for prevailing conditions
+#73 unsafe turn or lange change prohibited
+#43 Violation of right of way - left turn
+
+
+count(acc_on_imp, distance == 0)
+
+#354 incidents at intersection, 294 not at intersection
+
+```
+

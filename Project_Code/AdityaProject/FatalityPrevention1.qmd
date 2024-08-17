@@ -1,0 +1,434 @@
+
+
+# Goal: Predict if certain conditions causing an accident will result in fatality so that preventive measures can be determined to avoid such fatality. 
+
+#predict collision_severity
+
+
+```{r}
+
+#Install and Load necessary packages
+
+#install.packages("readr")
+#install.packages("fastDummies")
+#install.packages("ROSE")
+library(readr)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(caTools)
+library(downloader)
+library(FNN)
+library(readxl)
+library(shapr)
+library(caret)
+library(randomForest)
+library(fastDummies)
+library(ROSE)
+
+#Get working directory
+getwd()
+
+
+#Step 1: Read the CSV file
+traffic <- read.csv("Project_Code/Data/data_traffic.csv")
+
+str(traffic)
+
+```
+
+
+```{r}
+
+
+#Step 1
+
+#Need to identify which conditions lead to accidents where party is at fault
+
+
+#Taking a subset of the dataset using information relevant to the accident itself - omitting ID's, etc
+
+accident_information <- select(traffic, c(month, day_of_week, time_cat, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting, intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race, stwd_vehicle_type, inattention, vehicle_autonomous, at_fault, collision_severity))
+
+
+accident_information
+
+```
+```{r}
+
+
+#Step 2 - Data cleaning and visualization
+
+# remove_below_threshold <- function(x,threshold) {
+# category_count <- table(x)
+# categories_to_keep <- names(category_count[category_count >= threshold])
+# accident_information <- accident_information[x %in% categories_to_keep, ]
+# }
+
+# #check if any bad data in accident_year
+# # observation - No bad data. Data ranges from 2019 - 2024
+# count(accident_information, accident_year)
+# #Bar graph by year
+# ggplot(data = accident_information, aes(x=accident_year)) + geom_bar()
+# #Observation - Clearly during covid accidents were down, but with lockdown being lifted, accidents increasing with each year.
+# 
+# 
+# # #check if any bad data in month
+# count(accident_information, month)
+# # #observation - No bad data. Data ranges through various months. Most accidents during winter/rainy months. Lowest accident rates in April, May. Accidents start picking up from Sep through March.Highest in October.
+# # #Bar graph by month
+# ggplot(data = accident_information, aes(x = fct_infreq(month))) + geom_bar()
+# 
+# 
+#check if any bad data in day_of_week
+# observation - There are 8 blanks
+# accident_information <- subset(accident_information, accident_information$day_of_week != "")
+# count(accident_information, day_of_week)
+# ggplot(data = accident_information, aes(x = fct_infreq(day_of_week))) + geom_bar()
+# 
+# x = as.data.frame(table(accident_information$day_of_week))
+# x$percent = round(100*x$Freq/sum(x$Freq), digits = 1)
+# x$label = paste(x$Var1," (", x$percent,"%)", sep = "")
+# x
+# 
+# pie(x$Freq, labels = x$label, main = "Accidents % by day of the week", col= rainbow(length(x) ))
+# 
+# 
+# 
+# 
+# #check if any bad data in time_cat
+# #observation - There are 3 blanks.
+accident_information <- subset(accident_information, accident_information$time_cat != "")
+# count(accident_information, time_cat)
+# ggplot(data = accident_information, aes(x = fct_infreq(time_cat))) + geom_bar()
+# 
+#check if any bad data in weather_1
+# observation - Few data whose frequency < 5. Interestingly around 85% of accidents are happening in clear weather
+count(accident_information, weather_1)
+category_count <- table(accident_information$weather_1)
+categories_to_keep <- names(category_count[category_count >= 5])
+
+
+accident_information <- accident_information[accident_information$weather_1 %in% categories_to_keep, ]
+
+# 
+# # #check if any bad data in distance
+# # # observation - No bad data. Additionally max collisions are at 0 distance.
+# count(accident_information, distance)
+# 
+# #check if any bad data in type_of_collision
+# # observation - No bad data.
+# count(accident_information, type_of_collision)
+
+
+
+```
+```{r}
+# #accident_information <- select(accidents_party_at_fault, c(accident_year, month, day_of_week, time_cat, primary_rd, secondary_rd, weather_1, distance, type_of_collision, ped_action, road_surface, road_cond_1, lighting,intersection, number_killed, number_injured, party_type, party_sex, party_age, party_sobriety, race,vehicle_year, vz_pcf_description,inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity))
+
+#check if any bad data in ped_action
+# observation - Few data whose frequency <5.
+count(accident_information, ped_action)
+category_count <- table(accident_information$ped_action)
+categories_to_keep <- names(category_count[category_count >= 5])
+accident_information <- accident_information[accident_information$ped_action %in% categories_to_keep, ]
+
+
+#check if any bad data in road_surface
+# observation - No bad data.
+count(accident_information, road_surface)
+category_count <- table(accident_information$road_surface)
+categories_to_keep <- names(category_count[category_count >= 5])
+accident_information <- accident_information[accident_information$road_surface %in% categories_to_keep, ]
+# 
+# 
+#check if any bad data in road_cond_1
+# observation - No bad data.
+count(accident_information, road_cond_1)
+category_count <- table(accident_information$road_cond_1)
+categories_to_keep <- names(category_count[category_count >= 10])
+accident_information <- accident_information[accident_information$road_cond_1 %in% categories_to_keep, ]
+
+
+# 
+# #check if any bad data in lighting
+# # observation - No bad data.
+# count(accident_information, lighting)
+# 
+# 
+# #check if any bad data in intersection
+# # observation - No bad data.
+# count(accident_information, intersection)
+# 
+# #check if any bad data in number_killed
+# # observation - No bad data.
+# count(accident_information, number_killed)
+
+
+
+#party_sobriety, race,vehicle_year, vz_pcf_description,inattention, stwd_vehicle_type, vehicle_autonomous, at_fault, collision_severity
+
+# # #check if any bad data in party_sobriety
+# # # observation - THere is data with frequency < 5
+count(accident_information, party_sobriety)
+category_count <- table(accident_information$party_sobriety)
+categories_to_keep <- names(category_count[category_count >= 10])
+accident_information <- accident_information[accident_information$party_sobriety %in% categories_to_keep, ]
+
+
+# #check if any bad data in race
+# # observation - No bad data.
+count(accident_information, race)
+
+
+# # check if any bad data in inattention
+# #  observation - No bad data.
+count(accident_information, inattention)
+category_count <- table(accident_information$inattention)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$inattention %in% categories_to_keep, ]
+
+# # check if any bad data in vehicle_autonomous
+# #  observation - No bad data.
+count(accident_information, vehicle_autonomous)
+category_count <- table(accident_information$vehicle_autonomous)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$vehicle_autonomous %in% categories_to_keep, ]
+
+# # check if any bad data in at_fault
+# #  observation - No bad data.
+count(accident_information, at_fault)
+
+
+# #check if any bad data in party_sex
+# # observation - No bad data.
+count(accident_information, party_sex)
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, party_type)
+category_count <- table(accident_information$party_type)
+categories_to_keep <- names(category_count[category_count >= 10])
+accident_information <- accident_information[accident_information$party_type %in% categories_to_keep, ]
+
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, party_age)
+category_count <- table(accident_information$party_age)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$party_age %in% categories_to_keep, ]
+
+# #check if any bad data in number_injured
+# # observation - No bad data.
+count(accident_information, number_injured)
+
+
+# #check if any bad data in collision_severity
+# # observation - No bad data.
+count(accident_information, collision_severity)
+
+# #check if any bad data in party_type
+# # observation - There are data with frequency < 10.
+count(accident_information, stwd_vehicle_type)
+category_count <- table(accident_information$stwd_vehicle_type)
+categories_to_keep <- names(category_count[category_count >= 20])
+accident_information <- accident_information[accident_information$stwd_vehicle_type %in% categories_to_keep, ]
+
+
+```
+```{r}
+
+#Removing all ages that are NA or negative
+accident_information <- filter(accident_information, party_age > 0)
+
+accident_information
+                   
+
+
+```
+
+
+```{r}
+
+
+
+#Set up a new dataset that will be converted to numerical values
+accident_information_changed <- accident_information
+
+
+#There is a low amount of some values of collision_severity
+#Grouping together some values to increase the overall count
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Medical", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Other Visible)", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Complaint of Pain)", 0)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Injury (Severe)", 1)
+accident_information_changed$collision_severity <- replace(accident_information_changed$collision_severity, accident_information_changed$collision_severity == "Fatal", 1)
+
+#Converting the type of the column to numeric
+accident_information_changed$collision_severity <- as.numeric(accident_information_changed$collision_severity)
+
+
+
+#Medical - 1
+#Injury (Other Visible) - 1
+#Injury (Complaint of Pain) - 0
+#Injury (Severe) - 1
+#Fatal - 1
+#accident_information_changed
+
+accident_information_changed
+
+
+#apply chi squared test
+# all variables being compared are categorical in nature, and in each variable category every value occurs at least 5 times
+
+CHIS_fatality <- lapply(accident_information_changed[,-c(5, 12, 13, 16, 23)], function(x) chisq.test(table(factor(accident_information_changed[,23]), factor(x))))
+
+
+#Display the chi-square statistic, degrees of freedom, and p-value
+do.call(rbind, CHIS_fatality) [, c(1,2,3)]
+
+
+
+#Removing the features that were deemed insignificant
+accident_information_changed <- select(accident_information_changed, -c(inattention, day_of_week, lighting))
+
+
+accident_information_changed
+
+
+
+#100s of vehicle types, combining similar values into groups while converting to numerical
+accident_information_changed <- accident_information_changed %>%
+  mutate(Passenger = ifelse(grepl("Passenger", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pedestrian = ifelse(grepl("Pedestrian", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Motorcycle = ifelse(grepl("Motorcycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Terrain = ifelse(grepl("Terrain|Dune", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Bicycle = ifelse(grepl("Bicycle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Zip_Scooter = ifelse(grepl("Zip|Scooter", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Pickup = ifelse(grepl("Pickup", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Police = ifelse(grepl("Police", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Public = ifelse(grepl("Public", accident_information_changed$stwd_vehicle_type), 1, 0),
+         SUV = ifelse(grepl("Sport Utility Vehicle", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Truck = ifelse(grepl("Truck|Trailer|Axle|Semi", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Unknown = ifelse(grepl("Unknown", accident_information_changed$stwd_vehicle_type), 1, 0),
+         Other = ifelse(!grepl("Passenger|Motorcycle|Terrain|Dune|Bicycle|Zip|Scooter|Pickup|Police|Public|Sport Utility Vehicle|Truck|Trailer|Axle|Semi|Unkown", accident_information_changed$stwd_vehicle_type), 1, 0)) %>%
+  select(-stwd_vehicle_type)
+
+
+str(accident_information_changed)
+
+
+#Removing features that are after the fact
+accident_information_changed <- select(accident_information_changed, -c(number_killed, number_injured, at_fault))
+
+## Feature selction - removing features that are not helpful
+
+#HUGE improvement
+accident_information_changed <- select(accident_information_changed, -party_age)
+
+#Huge improvement
+accident_information_changed <- select(accident_information_changed, -distance)
+
+
+accident_information_changed
+
+#Converting the rest of categorical variables to numerical variables using dummy columns
+accident_information_changed <- dummy_cols(accident_information_changed)
+
+
+#Removing the leftover columns that were just converted
+accident_information_changed <- select(accident_information_changed,-c(month, time_cat, weather_1, intersection, party_sobriety, party_type, party_sex, road_surface, race, road_cond_1, vehicle_autonomous, ped_action, type_of_collision))
+
+
+accident_information_changed
+
+```
+
+
+```{r}
+
+#Function used for normalization/scaling to a range of 0-1
+normalize <- function(x) {
+  return ( (x - min(x)) / (max(x) - min(x)))
+}
+
+
+#Apply normalization to all variables
+standardized_accident_information_changed <- as.data.frame(lapply(accident_information_changed[,], normalize))
+
+#Make sure all variables are of type double (numerical)
+standardized_accident_information_changed <- as.data.frame(lapply(accident_information_changed[,], function(x) x = as.double(x)))
+
+standardized_accident_information_changed
+
+
+
+set.seed(1000)
+
+
+#60-20-20 split for KNN model
+
+#Initial splitting into training and validation/testing
+fatal_split <- sample.split(standardized_accident_information_changed$collision_severity, SplitRatio = 0.6)
+train_fatal <- subset(standardized_accident_information_changed, fatal_split == T)
+next_step_fatal <- subset(standardized_accident_information_changed, fatal_split == F)
+
+#Second split into validation and testing
+valid_split <- sample.split(next_step_fatal$collision_severity, SplitRatio = 0.5)
+validation_fatal <- subset(next_step_fatal, valid_split == T)
+testing_fatal <- subset(next_step_fatal, valid_split == F)
+
+#Shows the imbalance in collision_severity counts
+count(train_fatal, collision_severity)
+
+#Convert to data which ROSE can use
+data(train_fatal)
+#Upsambpling to balance data
+balanced_train_fatal <- ovun.sample(collision_severity ~ ., data = train_fatal, method = "over", N=18000)$data
+
+
+#New count shows data is more balanced
+count(balanced_train_fatal, collision_severity)
+
+
+
+train_fatal
+validation_fatal
+testing_fatal
+
+
+#Determining the k
+k_num_fatal <- as.integer(sqrt(nrow(balanced_train_fatal)))
+k_num_fatal <- k_num_fatal + 1
+
+
+#VALIDATION AND FINE TUNE TEST
+fatal_model_validating <- knn(train = balanced_train_fatal, test = validation_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
+fatal_model_validating
+
+
+validation_fatal_vals <- factor(validation_fatal$collision_severity)
+validation_fatal_vals
+
+f1_score_fatal <- confusionMatrix(factor(fatal_model_validating), validation_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal
+
+
+#FINAL TEST
+fatal_model_testing <- knn(train = balanced_train_fatal, test = testing_fatal, cl = balanced_train_fatal$collision_severity, k = k_num_fatal)
+
+
+testing_fatal_vals <- factor(testing_fatal$collision_severity)
+
+f1_score_fatal_test <- confusionMatrix(factor(fatal_model_testing), testing_fatal_vals, mode = "everything", positive = "1")
+
+f1_score_fatal_test
+
+
+
+
+```
+
