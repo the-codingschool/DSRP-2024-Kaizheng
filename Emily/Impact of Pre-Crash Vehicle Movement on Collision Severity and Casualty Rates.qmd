@@ -6,6 +6,130 @@ editor: visual
 
 # Impact of Pre-Crash Vehicle Movement on Collision Severity and Casualty Rates
 
-```{r}
+## Abstract
 
-```
+### **Background:**
+
+Motor vehicle accidents remain a leading cause of injury in the United States, with an average of 3.8 million emergency department visits annually between 2019 and 2020. This study leverages a comprehensive dataset from San Francisco, encompassing over 31,000 records of traffic crashes resulting in injury or fatality from 2019 to the present, to examine the impact of vehicle movements and collision types on the severity of outcomes.
+
+### **Approach:**
+
+The dataset was curated from multiple authoritative sources, including the Office of the Chief Medical Examiner and the San Francisco Police Department. Key variables such as vehicle movement prior to a collision and the type of collision were analyzed to identify patterns and associations with casualty and fatality rates. Statistical methods, including chi-squared tests, were employed to assess the relationships between these variables and the severity of collisions.
+
+### **Results:**
+
+The analysis revealed that certain vehicle movements, such as "Slowing/Stopped" and "Unsafe Movements," are associated with higher average casualties and fatalities. Collision types like "Broadside," "Head-On," and "Hit Pedestrian" also exhibited a strong correlation with severe outcomes. The chi-squared tests confirmed significant associations between the type of movement, type of collision, and the severity of the incident.
+
+### **Conclusion:**
+
+The findings suggest that more dynamic and hazardous driving behaviors, along with specific collision types, disproportionately contribute to severe injuries and fatalities. These results underscore the need for targeted road safety interventions, such as improved traffic management, infrastructure enhancements, and public awareness campaigns, to mitigate the risks associated with these high-risk movements and collisions. Future research should address potential data limitations and explore additional factors influencing road safety to develop more effective preventative measures.
+
+## Background
+
+Understanding how vehicle movement dynamics affects amounts of casualties is crucial, given that, according to the National Center for Health Statistics, an average of 3.8 million emergency department visits for motor vehicle crash injuries occurred annually between 2019 and 2020, with most of these unintentional injuries affecting vehicle occupants and representing a leading cause of injury in the United States. This research draws on a comprehensive dataset from San Francisco, which covers traffic crashes resulting in injury from 2019 to the present. The dataset is compiled from various authoritative sources, including the Office of the Chief Medical Examiner for fatality records and the San Francisco Police Department’s Interim Collision System for injury data. Additionally, it incorporates historical data from the Crossroads Software Traffic Collision Database and the Statewide Integrated Transportation Record System. The dataset's breadth, encompassing over 31,000 records with detailed attributes such as vehicle movement, crash severity, and geographic location, provides a robust foundation for analysis.
+
+In data wrangling, some values were merged in some attributes of interest to make the study more straightforward. In the attribute of type of collision (named “type_of_collision”), the value of “Other” includes “Overturned” and ungiven types of movement. In the attribute of type of movement prior to collision (named “move_pre_acc”), the value of “Other” includes “Ran Off Road”, “Other Unsafe Turning”, “Crossed Into Opposing Lane”, “Crossing Into Opposing Lane”, “Traveling Wrong Way”; “Making U Turn”; the value of “Merging/Changing Lanes” includes “Entering Traffic” and “Changing Lanes”; the value of “Stopped/Parked” includes “Parked”, “Stopped.”
+
+By focusing on the type of vehicle movement prior to a crash and the type of collision, this research aims to uncover patterns that could lead to targeted interventions, ultimately reducing the frequency and severity of traffic accidents and improving overall road safety. This research seeks to explore how the type of vehicle movement preceding a crash, along with the nature of the collision itself, impacts the severity of the incident and the number of people injured or killed. This study hypothesizes that certain maneuvers like left turns and unsafe movements and certain types of collisions like hitting pedestrians and head on are disproportionately responsible for increasing the severity and frequency of traffic-related casualties and deaths. Examining how vehicle movement affects collision severity and casualty rates is vital for enhancing road safety and informing public policy.
+
+## Results
+
+### [Visualizations Involving Casualties]{.underline}
+
+### Effects of Movement
+
+#### On Number of Casualties
+
+![](images/clipboard-2913098003.png)
+
+This bar chart illustrates the average number of casualties (deaths and injuries) associated with different vehicle movements in car accidents. The data shows that Slowing/Stopped movements have the highest average casualties at, followed by proceeding straight at. Unsafe Movement and Making Left Turn also result in relatively high casualty averages. In contrast, Parking/Backing and Making Right Turns are associated with lower average casualties, suggesting that more active or dynamic driving maneuvers tend to result in more severe outcomes.
+
+#### On Number of Fatalities
+
+![This bar chart illustrates the impact of various vehicle movements on the average number of deaths. The data reveals that Unsafe Movements and Proceeding Straight are associated with the highest average fatalities, while actions such as Parking/Backing and Slowing/Stopped result in fewer deaths. This also suggests that more hazardous or dynamic maneuvers increase the likelihood of fatal accidents, highlighting the need for targeted safety interventions for these high-risk movements.](images/clipboard-3428163037.png)
+
+### Effects of Type of Collision
+
+#### On Number of Casualties
+
+![](images/clipboard-1320004956.png)
+
+The bar chart illustrates the average number of casualties (injuries and deaths) resulting from different types of car collisions. Broadside collisions exhibit the highest average number of casualties, followed by "Rear End" and “Head-On”. Conversely, the other types of “Hit Object,” “Hit Pedestrian”, “Sideswipe” and "Other" collisions display somewhat lower average casualty counts. Notably, Head-On and Rear End collisions exhibit the highest average number of casualties, emphasizing the importance of defensive driving practices to mitigate risks associated with these collision types.
+
+#### On Number of Fatalities
+
+The bar chart illustrates the average number of deaths resulting from different types of car collisions. "Hit Object" collisions exhibit the highest average number of deaths, followed by "Hit Pedestrian". Conversely, the other types of "Rear End," "Sideswipe," “Head-On”, “Broadside” and "Other" collisions display significantly lower average death counts. The data suggests that collisions involving objects and pedestrians (both of which are non-vehicular types of objects) pose the greatest risk to human life, emphasizing the importance of road infrastructure safety. Furthermore, the stark contrast between the fatality rates of "Hit Object" and “Hit Pedestrian” and other collision types underscores the need for targeted safety measures to mitigate the severity of such accidents.
+
+### [Hypothesis Testing Involving Collision Severity]{.underline}
+
+### Effects of Movement
+
+A chi-squared test was conducted to assess the relationship between collision severity and the driver's movement before collision. The resulting p-value of 1.775853e-38 was significantly below the 0.05 pre-determined significance level, indicating a strong association between the two variables.
+
+![](images/clipboard-797221054.png)
+
+The heatmap visualizes the residuals from a chi-squared test examining the relationship between the type of movement and the severity of a collision. Each cell represents the difference between the observed and expected frequencies for a specific combination of movement and collision severity. Warmer colors (red) indicate larger positive residuals, suggesting more observed cases than expected, while cooler colors (blue) indicate larger negative residuals, suggesting fewer observed cases than expected.
+
+Notable patterns observed in the data include the "Slowing/Stopped" and "Other" categories, which exhibit stronger color intensity, indicating they disproportionately influence the outcomes. Specifically, the "Slowing/Stopped" category is associated with significantly high residual values for "Injury (Complaint of Pain)" and notably low residual values for "Injury (Other Visible)" and "Injury (Severe)." This suggests that incidents that occurred when the vehicle is “Slowing/Stopped” are more likely to result in less severe injuries than expected. Conversely, the "Other" category displays very low residuals for "Injury (Complaint of Pain)" and higher residuals for both "Injury (Other Visible)" and "Injury (Severe)," indicating a greater likelihood of more severe outcomes than anticipated.
+
+### Effects of Type of Collision
+
+A subsequent chi-squared test was conducted to examine the relationship between collision severity and the type of collision. The resulting p-value of 1.233995e-309 was highly significant (p \< 0.05), indicating a strong association between these two variables.
+
+![](images/clipboard-1518887921.png)
+
+The heatmap visualizes the residuals from a chi-squared test examining the relationship between the type of collision and the severity of a collision. Each cell represents the difference between the observed and expected frequencies for a specific combination of collision type and collision severity. Warmer colors (red) indicate larger positive residuals, suggesting more observed cases than expected, while cooler colors (blue) indicate larger negative residuals, suggesting fewer observed cases than expected.
+
+Notable patterns in the data include the "Rear End" and "Hit Pedestrian" categories, which exhibit stronger color intensities, indicating they disproportionately influence the outcomes. The "Hit Pedestrian" category shows very high residual values in the cells associated with "Injury (Severe)" and "Fatal," and a very low residual value for "Injury (Complaint of Pain)." This suggests that incidents involving pedestrians have a significantly higher likelihood of resulting in more severe outcomes than expected. Conversely, the "Rear End" category displays a very low residual for "Injury (Complaint of Pain)" and higher residuals for "Injury (Other Visible)" and "Injury (Severe)," indicating a greater likelihood of being associated with less severe outcomes than anticipated.
+
+## Discussion
+
+The findings from this study provide significant insights into the relationship between vehicle movements, types of collisions, and the severity of outcomes, including both casualties and fatalities. The results indicate that certain driving behaviors and collision types are disproportionately associated with higher risks of severe outcomes, which has important implications for road safety and the development of targeted interventions.
+
+### **Casualties and Movements:**
+
+The data reveals that movements such as "Slowing/Stopped" and "Proceeding Straight" are associated with the highest average number of casualties. These findings suggest that more active or dynamic driving maneuvers, particularly those that involve abrupt changes in motion or direction, tend to result in more severe outcomes. This highlights the need for focused safety measures, such as improved traffic management and better public awareness campaigns, to mitigate the risks associated with these high-risk behaviors.
+
+### **Fatalities and Movements:**
+
+The study also found that "Unsafe Movements" and "Proceeding Straight" are linked to the highest average fatalities, further supporting the notion that hazardous or dynamic maneuvers increase the likelihood of fatal accidents. This underscores the importance of targeted interventions, such as enhanced enforcement of traffic laws and the development of advanced driver assistance systems (ADAS), to reduce the occurrence of such dangerous behaviors on the road.
+
+### **Casualties and Type of Collision:**
+
+When examining the type of collision, "Broadside," "Rear End," and "Head-On" collisions were found to result in the highest average casualties. These collision types, particularly head-on and rear-end collisions, emphasize the need for defensive driving practices and the importance of infrastructure improvements, such as better signage and road design, to reduce the incidence of these high-risk collisions.
+
+### **Fatalities and Type of Collision:**
+
+The analysis also revealed that "Hit Object" and "Hit Pedestrian" collisions have the highest average fatalities, suggesting that non-vehicular collisions pose the greatest risk to human life. This finding highlights the critical importance of road infrastructure safety and the need for targeted safety measures, such as improved pedestrian crossings and barriers to protect against collisions with stationary objects.
+
+### **Collision Severity and Movement:**
+
+The chi-squared analysis demonstrated a strong association between collision severity and the driver's movement prior to the collision, with a particularly strong influence from the "Slowing/Stopped" and "Other" categories. Expectedly, the "Slowing/Stopped" category showed a higher likelihood of being associated with less severe injuries. This finding warrants further investigation to understand the factors contributing to this pattern, such as the speed at impact.
+
+### **Collision Severity and Type of Collision:** 
+
+The chi-squared test also revealed a significant relationship between collision severity and the type of collision, with the "Rear End" and "Hit Pedestrian" categories showing the most pronounced effects. The "Hit Pedestrian" category, in particular, was associated with a higher likelihood of severe or fatal outcomes, confirming the hypothesis that certain types of collisions are inherently more dangerous. This underscores the need for targeted interventions to protect vulnerable road users and reduce the severity of these high-risk collisions.
+
+### **Conclusion and Implications:**
+
+These findings contribute to the broader field of traffic safety by identifying key risk factors associated with severe and fatal outcomes in road accidents. The study supports the hypothesis that certain driving maneuvers and collision types are more likely to result in severe injuries or fatalities, which has important implications for policy and safety interventions. For instance, the results suggest that interventions should focus on reducing unsafe driving behaviors and improving road infrastructure to protect pedestrians and mitigate the risks associated with high-impact collisions.
+
+### **Limitations and Future Research:**
+
+While this study provides valuable insights, it is not without limitations. The data may be influenced by reporting biases, and the study does not account for all possible confounding factors, such as weather conditions or vehicle safety features. Future research should aim to address these limitations by incorporating more comprehensive data and exploring additional variables that may influence the severity of road accidents.
+
+### **Next Steps:**
+
+Moving forward, it would be reasonable to investigate the specific conditions under which certain movements and collisions result in severe outcomes. Further research could explore the effectiveness of various safety interventions, such as enhanced traffic enforcement, road design improvements, and public education campaigns, in reducing the incidence and severity of high-risk driving behaviors and collision types. Additionally, expanding the scope of the study to include a broader range of variables, such as environmental factors and vehicle characteristics, could provide a more nuanced understanding of the factors contributing to road accidents.
+
+## Code and Data Availability
+
+The dataset utilized in this study, titled *Traffic Crashes Resulting in Injury: Parties Involved*, can be accessed via the following link: [Traffic Crashes Dataset](https://data.sfgov.org/Public-Safety/Traffic-Crashes-Resulting-in-Injury-Parties-Involv/8gtc-pjc6/about_data). The corresponding GitHub repository containing the project code and additional resources is available at: [GitHub Repository](https://github.com/the-codingschool/DSRP-2024-Kaizheng).
+
+## Acknowledgements
+
+I would like to express my deepest gratitude to Professor Kaizheng Wang of Columbia University for his invaluable guidance and support throughout the research and development phases. I am also deeply thankful to TA Wanjiru of The Coding School organization for their dedicated assistance and insightful feedback. Additionally, I extend my sincere thanks to The Coding School organization for providing essential resources and expertise. Your contributions have been crucial to the achievement of our goals, and I am sincerely grateful for your support.
+
+## Source
+
+Davis D, Cairns C. Emergency department visit rates for motor vehicle crashes by selected characteristics: United States, 2019–2020. NCHS Data Brief, no 466. Hyattsville, MD: National Center for Health Statistics. 2023. DOI: <https://dx.doi.org/10.15620/cdc:125983>
