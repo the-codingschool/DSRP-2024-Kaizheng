@@ -23,9 +23,9 @@ library(readr)
 
 ```{r}
 #Define url of data
-url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
+url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
 
-#alternate url: url <- 'https://raw.githubusercontent.com/the-codingschool/DSRP-2024-Kaizheng/Aditya-Das-Dev/Project_Code/Data/data_traffic.csv'
+#alternate url: url <- 'C:\\Emily\\DSRP\\DSRP_2024\\DSRP-2024-Kaizheng\\Project_Code\\Data\\data_traffic.csv'
 
 # Load the dataset into a dataframe called traffic_d8ata
 traffic_data <- read_csv(url)
@@ -101,10 +101,14 @@ nrow(clean_traffic_data) #Checking if there are less rows now
 clean_traffic_data[clean_traffic_data == 'Other than driver'] <- 'Other Than Driver'
 clean_traffic_data[clean_traffic_data == 'Other improper driving'] <- 'Other Improper Driving'
 
-#move_pre_acc column has both 'Crossed Into Opposing Lane' + 'Crossing Into Opposing Lane'
-clean_traffic_data[clean_traffic_data == 'Crossed Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
-clean_traffic_data[clean_traffic_data == 'Crossing Into Opposing Lane'] <- 'Crossed/Crossing Into Opposing Lane'
+#change Vehicle/Pedestrian into Hit Pedestrian
+clean_traffic_data$type_of_collision[clean_traffic_data$type_of_collision == 'Vehicle/Pedestrian'] <- 'Hit Pedestrian'
 
+```
+
+```{r}
+#Adding casualty column to represent total number killed + injured
+clean_traffic_data$number_casualty <- clean_traffic_data$number_injured + clean_traffic_data$number_killed
 ```
 
 ```{r}

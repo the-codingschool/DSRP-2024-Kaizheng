@@ -1,0 +1,359 @@
+---
+title: "Full Data Analysis_SF Traffic"
+format: html
+editor: visual
+---
+
+# Part 2: Exploratory Data Analysis-SF Traffic
+
+## Preparation
+
+### Import All Necessary Packages
+
+```{r}
+library(janitor) 
+library(tidyr)  
+library(tidyverse)  
+library(dplyr)  
+library(ggplot2)  
+library(readr)
+
+# Load libraries
+library(caTools)
+library(readr)
+library(downloader)
+library(FNN)
+library(readxl)
+library(caret)
+library(pheatmap)
+library(pROC)
+
+```
+
+### Reading in Data
+
+```{r}
+#Define url of data 
+url <- 'C:\\Users\\bluep\\Downloads\\clean_traffic_data.csv'  
+# Load the dataset into a dataframe called traffic_data 
+clean_traffic_data <- read_csv(url) 
+print(clean_traffic_data)
+```
+
+## Chi-Squared
+
+```{r}
+options(repos = c(CRAN = "https://cran.r-project.org"))
+# Install packages if necessary
+install.packages("ggplot2")
+install.packages("caTools")
+install.packages("readr")
+install.packages("downloader")
+install.packages("caTools")
+install.packages("FNN")
+install.packages("readxl")
+
+# Load libraries
+library(ggplot2)
+library(caTools)
+library(readr)
+library(downloader)
+library(caTools)
+library(FNN)
+library(readxl)
+```
+
+```{r plot-wider, fig.width=10}
+#Chi-Squared (correlation) for move_pre_acc_merge and collision_severity
+con_table <- table(clean_traffic_data$move_pre_acc_merge, clean_traffic_data$collision_severity)
+
+chisq_results <- chisq.test(con_table)
+
+chisq_results$p.value
+
+chisq_results$residuals
+
+# Convert residuals to a data frame
+residuals_df_ <- as.data.frame(as.table(chisq_results$residuals))
+
+# Rename columns for clarity
+colnames(residuals_df_) <- c("Movement", "CollisionSeverity", "Residual")
+
+# Heatmap of residuals
+ggplot(residuals_df_, aes(x = CollisionSeverity, y = Movement, fill = Residual)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  labs(title = "Chi-Squared Residuals Heatmap for type movement vs collision severity",
+       x = "Collision Severity",
+       y = "Movement",
+       fill = "Residual") +
+  theme_minimal()
+
+
+#1.775853e-38 is smaller than 0.05, meaning strong dependence between the 2 groups
+```
+
+```{r plot-wider, fig.width=10}
+#Chi-Squared (correlation) for type_of_collision_merge and move_pre_acc_merge
+con_table <- table(clean_traffic_data$type_of_collision_merge, clean_traffic_data$collision_severity)
+
+chisq_results <- chisq.test(con_table)
+
+chisq_results$p.value
+
+chisq_results$residuals
+
+# Convert residuals to a data frame
+residuals_df <- as.data.frame(as.table(chisq_results$residuals))
+
+# Rename columns for clarity
+colnames(residuals_df) <- c("TypeOfCollision", "CollisionSeverity", "Residual")
+
+# Heatmap of residuals
+ggplot(residuals_df, aes(x = CollisionSeverity, y = TypeOfCollision, fill = Residual)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  labs(title = "Chi-Squared Residuals Heatmap for type of collision vs collision severity",
+       x = "Collision Severity",
+       y = "Type of Collision",
+       fill = "Residual") +
+  theme_minimal()
+
+
+#1.233995e-309 is smaller than 0.05, meaning very strong effect between the 2 groups
+```
+
+## ANOVA
+
+```{r}
+# Perform ANOVA
+anova_result <- aov(number_casualty ~ move_pre_acc_merge, data = clean_traffic_data)
+summary(anova_result)
+
+```
+
+## KNN
+
+### k=5, number_killed
+
+```{r}
+clean_traffic_data_ <- clean_traffic_data %>%
+  filter(complete.cases(select(., number_killed, move_pre_acc_merge, type_of_collision_merge, mviw)))
+
+# Display the cleaned data
+print(clean_traffic_data_)
+
+# One-Hot Encoding
+encoded_data <- clean_traffic_data_ %>%
+  select(-number_killed) %>%  # Remove the target variable for encoding
+  model.matrix(~ move_pre_acc_merge + type_of_collision_merge + mviw- 1, .) %>%  # -1 removes the intercept
+  as.data.frame()
+
+
+# Add target variable back to the encoded data
+encoded_data$number_killed <- clean_traffic_data_$number_killed
+
+print(encoded_data)
+
+library(caTools)
+
+# Set a seed for reproducibility
+set.seed(3)
+
+# Split the dataset
+split <- sample.split(encoded_data$number_killed, SplitRatio = 0.8)
+train_data <- subset(encoded_data, split == TRUE)
+test_data <- subset(encoded_data, split == FALSE)
+
+# Separate features and target
+train_features <- train_data[, !names(train_data) %in% "Target"]
+train_target <- train_data$number_killed
+
+test_features <- test_data[, !names(test_data) %in% "Target"]
+test_target <- test_data$number_killed
+
+# Train k-NN model
+k <- 5
+knn_predictions <- knn(train = train_features, test = test_features, cl = train_target, k = k)
+
+# Evaluate performance
+knn_predictions <- as.factor(knn_predictions)
+test_target <- as.factor(test_target)
+conf_matrix <- confusionMatrix(knn_predictions, test_target)
+print(conf_matrix)
+
+dim(encoded_data)
+
+
+# Convert confusion matrix to a matrix format for pheatmap
+conf_matrix_table <- as.table(conf_matrix)
+pheatmap(conf_matrix_table, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE)
+
+# Assuming binary classification with positive class "Class1"
+roc_curve <- roc(test_target, as.numeric(knn_predictions))
+plot(roc_curve, col = "blue", main = "ROC Curve")
+
+```
+
+### k=5, number_injured
+
+```{r}
+clean_traffic_data_ <- clean_traffic_data %>%
+  filter(complete.cases(select(., number_injured, move_pre_acc_merge, type_of_collision_merge, mviw)))
+
+# Display the cleaned data
+print(clean_traffic_data_)
+
+# One-Hot Encoding
+encoded_data <- clean_traffic_data_ %>%
+  select(-number_injured) %>%  # Remove the target variable for encoding
+  model.matrix(~ move_pre_acc_merge + type_of_collision_merge + mviw- 1, .) %>%  # -1 removes the intercept
+  as.data.frame()
+
+
+# Add target variable back to the encoded data
+encoded_data$number_injured <- clean_traffic_data_$number_injured
+
+print(encoded_data)
+
+library(caTools)
+
+# Set a seed for reproducibility
+set.seed(3)
+
+# Split the dataset
+split <- sample.split(encoded_data$number_injured, SplitRatio = 0.8)
+train_data <- subset(encoded_data, split == TRUE)
+test_data <- subset(encoded_data, split == FALSE)
+
+# Separate features and target
+train_features <- train_data[, !names(train_data) %in% "Target"]
+train_target <- train_data$number_injured
+
+test_features <- test_data[, !names(test_data) %in% "Target"]
+test_target <- test_data$number_injured
+
+# Train k-NN model
+k <- 3
+knn_predictions <- knn(train = train_features, test = test_features, cl = train_target, k = k)
+
+# Evaluate performance
+knn_predictions <- as.factor(knn_predictions)
+test_target <- as.factor(test_target)
+conf_matrix <- confusionMatrix(knn_predictions, test_target)
+print(conf_matrix)
+
+dim(encoded_data)
+
+
+# Convert confusion matrix to a matrix format for pheatmap
+conf_matrix_table <- as.table(conf_matrix)
+pheatmap(conf_matrix_table, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE)
+
+# Assuming binary classification with positive class "Class1"
+roc_curve <- roc(test_target, as.numeric(knn_predictions))
+plot(roc_curve, col = "blue", main = "ROC Curve")
+```
+
+### k=5, number_casualty
+
+```{r}
+clean_traffic_data_ <- clean_traffic_data %>%
+  filter(complete.cases(select(., number_casualty, move_pre_acc_merge, type_of_collision_merge, mviw)))
+
+# Display the cleaned data
+print(clean_traffic_data_)
+
+# One-Hot Encoding
+encoded_data <- clean_traffic_data_ %>%
+  select(-number_casualty) %>%  # Remove the target variable for encoding
+  model.matrix(~ move_pre_acc_merge + type_of_collision_merge + mviw- 1, .) %>%  # -1 removes the intercept
+  as.data.frame()
+
+
+# Add target variable back to the encoded data
+encoded_data$number_casualty <- clean_traffic_data_$number_casualty
+
+print(encoded_data)
+
+library(caTools)
+
+# Set a seed for reproducibility
+set.seed(3)
+
+# Split the dataset
+split <- sample.split(encoded_data$number_casualty, SplitRatio = 0.8)
+train_data <- subset(encoded_data, split == TRUE)
+test_data <- subset(encoded_data, split == FALSE)
+
+# Separate features and target
+train_features <- train_data[, !names(train_data) %in% "Target"]
+train_target <- train_data$number_casualty
+
+test_features <- test_data[, !names(test_data) %in% "Target"]
+test_target <- test_data$number_casualty
+
+# Train k-NN model
+k <- 3
+knn_predictions <- knn(train = train_features, test = test_features, cl = train_target, k = k)
+
+# Evaluate performance
+knn_predictions <- as.factor(knn_predictions)
+test_target <- as.factor(test_target)
+conf_matrix <- confusionMatrix(knn_predictions, test_target)
+print(conf_matrix)
+
+dim(encoded_data)
+
+
+# Convert confusion matrix to a matrix format for pheatmap
+conf_matrix_table <- as.table(conf_matrix)
+pheatmap(conf_matrix_table, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, main='Confusion Matrix Heatmap for Casualties KNN') 
+
+# Assuming binary classification with positive class "Class1"
+roc_curve <- roc(test_target, as.numeric(knn_predictions))
+plot(roc_curve, col = "blue", main = "ROC Curve for Casualties KNN")
+```
+
+```{r}
+# Clean the data
+clean_traffic_data_ <- clean_traffic_data %>%
+  filter(complete.cases(select(., collision_severity, move_pre_acc_merge, type_of_collision_merge, mviw)))
+
+# One-Hot Encoding
+encoded_data <- clean_traffic_data_ %>%
+  select(-collision_severity) %>%
+  model.matrix(~ move_pre_acc_merge + type_of_collision_merge + mviw - 1, .) %>%
+  as.data.frame()
+
+# Add target variable back to the encoded data
+encoded_data$collision_severity <- clean_traffic_data_$collision_severity
+
+# Split the dataset
+set.seed(3)
+split <- sample.split(encoded_data$collision_severity, SplitRatio = 0.8)
+train_data <- subset(encoded_data, split == TRUE)
+test_data <- subset(encoded_data, split == FALSE)
+
+# Separate features and target
+train_features <- train_data[, !names(train_data) %in% "collision_severity"]
+train_target <- train_data$collision_severity
+
+test_features <- test_data[, !names(test_data) %in% "collision_severity"]
+test_target <- test_data$collision_severity
+
+# Train k-NN model
+k <- 10
+knn_predictions <- knn(train = train_features, test = test_features, cl = train_target, k = k)
+
+# Evaluate performance
+knn_predictions <- as.factor(knn_predictions)
+test_target <- as.factor(test_target)
+conf_matrix <- confusionMatrix(knn_predictions, test_target)
+print(conf_matrix)
+
+# Convert confusion matrix to a matrix format for pheatmap
+conf_matrix_table <- as.table(conf_matrix)
+pheatmap(conf_matrix_table, display_numbers = TRUE, cluster_rows = FALSE, cluster_cols = FALSE, main='Confusion Matrix Heatmap for Injury Severity KNN')
+
+```
