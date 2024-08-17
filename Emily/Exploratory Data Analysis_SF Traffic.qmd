@@ -134,7 +134,7 @@ ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x
 ```
 
 ```{r}
-#bar graph of average number_killed based on move_pre_acc 
+#bar graph of average number_killed based on type_of_collision_merge 
 ggplot(data = subset(clean_traffic_data, !is.na(type_of_collision_merge)), aes(x = type_of_collision_merge, y=number_killed, fill=type_of_collision_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
@@ -270,7 +270,7 @@ labs(x='Movement Prior to Accident',y='Amount of Accidents with Complaint of Pai
 #### VS number_casualty, number_killed, number_injured
 
 ```{r}
-#bar graph of average number_casualty based on move_pre_acc 
+#bar graph of average number_casualty based on move_pre_acc_merge 
 ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_casualty, fill=move_pre_acc_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
@@ -280,7 +280,7 @@ ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = mo
 ```
 
 ```{r}
-#bar graph of average number_killed based on move_pree_acc 
+#bar graph of average number_killed based on move_pre_acc_merge
 ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_injured, fill=move_pre_acc_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
@@ -290,7 +290,7 @@ labs(x='Movement Prior to Accident',y='Average Number of Injuries', title='Effec
 ```
 
 ```{r}
-#bar graph of average number_killed based on move_pree_acc 
+#bar graph of average number_killed based on move_pre_acc_merge 
 ggplot(data = subset(clean_traffic_data, !is.na(move_pre_acc_merge)), aes(x = move_pre_acc_merge, y=number_killed, fill=move_pre_acc_merge)) +
   stat_summary(fun.y="mean", geom="bar") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
