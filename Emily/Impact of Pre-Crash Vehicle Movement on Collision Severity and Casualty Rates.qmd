@@ -1,0 +1,11 @@
+---
+title: "Impact of Pre-Crash Vehicle Movement on Collision Severity and Casualty Rates"
+format: pdf
+editor: visual
+---
+
+# Impact of Pre-Crash Vehicle Movement on Collision Severity and Casualty Rates
+
+```{r}
+
+```
